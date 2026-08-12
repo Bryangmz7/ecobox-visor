@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcoBox — Visores de diseño</title>
+<style>
+  :root{
+    --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --soft:#5B584F;
+    --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --soft:#A7A499;
+           --line:#3B3D3A; --rule:#55564F; --accent:#E08268; }
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:48px 22px 72px;background:var(--bg);color:var(--ink);
+    font-family:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    font-size:14px;line-height:1.55;max-width:760px;margin-inline:auto;
+  }
+  h1{
+    font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif;font-size:27px;
+    margin:0 0 6px;letter-spacing:-.015em;
+  }
+  .eyebrow{
+    text-transform:uppercase;letter-spacing:.13em;font-size:11px;
+    color:var(--soft);margin:0 0 8px;
+  }
+  .lead{color:var(--soft);font-size:13px;margin:0 0 34px;padding-bottom:26px;border-bottom:1px solid var(--rule);}
+
+  a.card{
+    display:block;text-decoration:none;color:inherit;background:var(--panel);
+    border:1px solid var(--rule);padding:20px 22px;margin-bottom:16px;
+    transition:border-color .12s ease, transform .12s ease;
+  }
+  a.card:hover{border-color:var(--accent);transform:translateY(-1px);}
+  a.card:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  a.card h2{
+    font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif;font-size:16px;
+    margin:0 0 5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  a.card p{margin:0;font-size:12.5px;color:var(--soft);}
+  .pill{
+    font-size:10px;letter-spacing:.04em;padding:2px 8px;border:1px solid var(--accent);
+    color:var(--accent);font-family:ui-monospace,monospace;font-weight:400;
+  }
+  .card.pend{opacity:.55;pointer-events:none;}
+  .card.pend .pill{border-color:var(--rule);color:var(--soft);}
+
+  .nota{
+    background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--accent);
+    padding:15px 18px;font-size:12.5px;color:var(--soft);margin-top:30px;
+  }
+  .nota b{color:var(--ink);}
+  footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--soft);}
+</style>
+</head>
+<body>
+  <p class="eyebrow">EcoPoint</p>
+  <h1>EcoBox — visores de diseño</h1>
+  <p class="lead">
+    Modelos 3D del tacho para revisión del equipo. Se actualizan solos: cada cambio
+    en el diseño aparece aquí al recargar la página.
+  </p>
+
+  <a class="card" href="fase1-exterior.html">
+    <h2>Fase 1 · Vista exterior <span class="pill">disponible</span></h2>
+    <p>
+      Estructura en chapa sin acabado, 80 × 70 × 175 cm. Las cuatro zonas verticales,
+      la boca de botella, el buzón de tapas y ambas puertas de mantenimiento.
+      Gira, abre las puertas y exporta a GLB o STL.
+    </p>
+  </a>
+
+  <div class="card pend">
+    <h2>Fase 2 · Vista interna <span class="pill">en curso</span></h2>
+    <p>
+      Componentes, cableado y conexiones, con despiece interactivo para ver
+      cómo se arma por dentro.
+    </p>
+  </div>
+
+  <div class="nota">
+    <b>Esto es un prototipo estructural, no el producto terminado.</b>
+    El metal desnudo es a propósito: el acabado y el vinilo de fachada se aplican
+    después, sobre esta misma base. Las medidas y posiciones sí son las definitivas
+    hasta que Hames valide fabricabilidad en el modelado 3D.
+  </div>
+
+  <footer>
+    Necesita conexión a internet para cargar la librería 3D · funciona en cualquier
+    navegador de escritorio
+  </footer>
+</body>
+</html>

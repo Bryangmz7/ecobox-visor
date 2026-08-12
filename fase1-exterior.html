@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcoBox — Fase 1 · Vista exterior (estructura sin acabado)</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#DEDEDC;}
+  body{font-family:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;color:#1E1F1E;}
+  #app{position:fixed;inset:0;}
+  canvas{display:block;}
+
+  .hud{
+    position:fixed;z-index:10;background:rgba(252,252,251,.93);
+    border:1px solid #B9B9B4;backdrop-filter:blur(6px);
+  }
+  #panel{
+    top:16px;left:16px;padding:14px 16px;max-width:290px;
+    max-height:calc(100dvh - 32px);overflow-y:auto;
+  }
+  #panel .hint{
+    font-size:9.5px;color:#6A6A64;line-height:1.5;
+    border-top:1px solid #D2D2CD;margin-top:11px;padding-top:9px;
+  }
+  #panel h1{
+    font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif;
+    font-size:14px;margin:0 0 2px;letter-spacing:-.01em;
+  }
+  #panel .sub{font-size:10.5px;color:#6A6A64;margin:0 0 12px;line-height:1.45;}
+  #panel .dim{
+    font-size:11px;color:#1E1F1E;border-top:1px solid #D2D2CD;
+    padding-top:9px;margin-bottom:11px;font-variant-numeric:tabular-nums;
+  }
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:11px;color:#3D3D39;}
+  .row input{accent-color:#8A4030;margin:0;cursor:pointer;}
+  .row label{cursor:pointer;user-select:none;}
+  .btns{display:flex;gap:7px;margin-top:12px;border-top:1px solid #D2D2CD;padding-top:11px;}
+  .btns button{
+    flex:1;font-family:inherit;font-size:10.5px;padding:6px 4px;cursor:pointer;
+    background:#1E1F1E;color:#F2F2EF;border:1px solid #1E1F1E;
+  }
+  .btns button:hover{background:#3A3B39;}
+  .btns button:focus-visible{outline:2px solid #8A4030;outline-offset:2px;}
+
+  #zonas{top:16px;right:16px;padding:12px 14px;font-size:10.5px;}
+  #zonas .z{display:flex;justify-content:space-between;gap:16px;padding:3px 0;color:#3D3D39;}
+  #zonas .z b{font-weight:600;color:#1E1F1E;}
+  #zonas .hdr{
+    font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:#6A6A64;
+    margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid #D2D2CD;
+  }
+
+  #tag{
+    position:fixed;bottom:14px;right:16px;z-index:10;font-size:10px;
+    color:#8A4030;border:1px solid #8A4030;padding:4px 9px;background:rgba(252,252,251,.85);
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="hud" id="panel">
+  <h1>EcoBox · Fase 1</h1>
+  <p class="sub">Vista exterior. Estructura en chapa sin acabado — el vinilo de fachada se aplica después como textura.</p>
+  <div class="dim">80 × 70 × 175 cm</div>
+  <div class="row"><input type="checkbox" id="cbGirar" checked><label for="cbGirar">Girar automático</label></div>
+  <div class="row"><input type="checkbox" id="cbTorn" checked><label for="cbTorn">Tornillería</label></div>
+  <div class="row"><input type="checkbox" id="cbPuertas"><label for="cbPuertas">Abrir puertas</label></div>
+  <div class="row"><input type="checkbox" id="cbCotas"><label for="cbCotas">Marcar zonas</label></div>
+  <div class="btns">
+    <button id="btnGlb">Exportar GLB</button>
+    <button id="btnStl">Exportar STL</button>
+  </div>
+  <p class="hint">Arrastra para girar · rueda para zoom · clic derecho para desplazar</p>
+</div>
+
+<div class="hud" id="zonas">
+  <div class="hdr">Zonas verticales</div>
+  <div class="z"><span>4 · Cabezal</span><b>140–175</b></div>
+  <div class="z"><span>3 · Interacción</span><b>100–140</b></div>
+  <div class="z"><span>2 · Depósito</span><b>15–100</b></div>
+  <div class="z"><span>1 · Zócalo</span><b>0–15</b></div>
+</div>
+
+<div id="tag">sin acabado — falta fachada</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+
+/* ═══════════════════════════════════════════════════════════
+   SPEC — todo parametrizado. Cambiar aquí, no en la geometría.
+   Unidades: metros.
+   ═══════════════════════════════════════════════════════════ */
+const SPEC = {
+  W: 0.80, D: 0.70, H: 1.75,       // ancho × profundidad × alto
+  chapa: 0.003,                     // grosor de plancha
+  junta: 0.004,                     // separación entre paneles
+
+  zZocalo: 0.15,                    // tope zona 1
+  zDeposito: 1.00,                  // tope zona 2
+  zInteraccion: 1.40,               // tope zona 3
+
+  bocaR: 0.055, bocaY: 1.25,        // boca de botella  Ø 11 cm
+  tapaR: 0.020, tapaY: 1.155,       // buzón de tapas   Ø  4 cm
+
+  panW: 0.170, panH: 0.210, panY: 1.52,   // módulo de pantalla (carcasa)
+  scrW: 0.094, scrH: 0.150,               // área activa 7"
+
+  ladoPuertas: +1,                  // +1 = costado derecho, -1 = izquierdo
+  ptaElecW: 0.30,  ptaElecH: 0.22,  ptaElecY: 1.22,
+  ptaDepW:  0.638, ptaDepH:  0.413, ptaDepY:  0.60,
+
+  antenaH: 0.13,
+  pataR: 0.022, pataH: 0.028,
+
+  // acabado: chapa desnuda, sin pintura ni vinilo
+  vinil: null,                      // ← cuando exista el diseño: 'fachada.png'
+};
+
+/* ═══════════════════════════════════════════════════════════
+   Escena
+   ═══════════════════════════════════════════════════════════ */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xDEDEDC);
+
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.05, 60);
+camera.position.set(1.55, 1.42, 2.05);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+// guarda: si la pestaña arranca oculta, innerWidth puede ser 0 y el lienzo
+// queda en blanco hasta el primer resize
+const ancho = () => Math.max(1, innerWidth), alto = () => Math.max(1, innerHeight);
+renderer.setSize(ancho(), alto());
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.getElementById('app').appendChild(renderer.domElement);
+
+// entorno: reflejos reales sobre el metal (esto es lo que separa
+// una chapa creíble de una caja gris)
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.92, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.9;
+controls.minDistance = 0.7;
+controls.maxDistance = 7;
+controls.maxPolarAngle = Math.PI / 2 + 0.04;
+
+// luces
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb9bcbd, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 2.0);
+key.position.set(2.4, 4.2, 2.6);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -1.6; key.shadow.camera.right = 1.6;
+key.shadow.camera.top = 2.6;   key.shadow.camera.bottom = -0.5;
+key.shadow.camera.near = 0.5;  key.shadow.camera.far = 12;
+key.shadow.bias = -0.0006;
+key.shadow.normalBias = 0.012;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xffffff, 0.45);
+rim.position.set(-2.6, 1.6, -2.2);
+scene.add(rim);
+
+// piso
+const piso = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 64),
+  new THREE.MeshStandardMaterial({ color: 0xCFCFCB, roughness: 0.95, metalness: 0.0 })
+);
+piso.rotation.x = -Math.PI / 2;
+piso.receiveShadow = true;
+scene.add(piso);
+
+/* ═══════════════════════════════════════════════════════════
+   Materiales — chapa desnuda, sin pintar. Cada panel varía
+   un poco de tono y rugosidad, como planchas de distinto lote.
+   ═══════════════════════════════════════════════════════════ */
+const M = {
+  // galvanizado: no es espejo. Metalness intermedia + rugosidad media
+  // deja que la chapa reciba luz difusa y se lea como plancha, no como cromo.
+  chapaA:  new THREE.MeshStandardMaterial({ color: 0xC6CACD, metalness: 0.74, roughness: 0.44 }),
+  chapaB:  new THREE.MeshStandardMaterial({ color: 0xBEC2C6, metalness: 0.72, roughness: 0.50 }),
+  chapaC:  new THREE.MeshStandardMaterial({ color: 0xCCD0D2, metalness: 0.78, roughness: 0.38 }),
+  puerta:  new THREE.MeshStandardMaterial({ color: 0xB9BDC1, metalness: 0.73, roughness: 0.52 }),
+  zocalo:  new THREE.MeshStandardMaterial({ color: 0x7A7F84, metalness: 0.62, roughness: 0.66 }),
+  interior:new THREE.MeshStandardMaterial({ color: 0x24262A, metalness: 0.30, roughness: 0.85,
+                                            side: THREE.BackSide }),
+  ducto:   new THREE.MeshStandardMaterial({ color: 0x3A3E42, metalness: 0.55, roughness: 0.62,
+                                            side: THREE.DoubleSide }),
+  aro:     new THREE.MeshStandardMaterial({ color: 0x8E9296, metalness: 0.95, roughness: 0.22 }),
+  tornillo:new THREE.MeshStandardMaterial({ color: 0x74797E, metalness: 0.95, roughness: 0.30 }),
+  bisagra: new THREE.MeshStandardMaterial({ color: 0x686D72, metalness: 0.93, roughness: 0.34 }),
+  negro:   new THREE.MeshStandardMaterial({ color: 0x1A1C1E, metalness: 0.25, roughness: 0.66 }),
+  // pantalla apagada, pero con brillo: sin reflejo se lee como agujero
+  vidrio:  new THREE.MeshStandardMaterial({ color: 0x15191E, metalness: 0.62,
+                                            roughness: 0.045, envMapIntensity: 1.9 }),
+  goma:    new THREE.MeshStandardMaterial({ color: 0x24262A, metalness: 0.05, roughness: 0.94 }),
+};
+
+const box = new THREE.Group();
+scene.add(box);
+
+function add(geo, mat, x = 0, y = 0, z = 0, parent = box) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  parent.add(m);
+  return m;
+}
+
+// Texto grabado sobre lienzo → textura. Sirve para la placa de identificación,
+// las etiquetas de zona y, más adelante, para montar el vinilo de fachada.
+function texturaTexto(texto, o = {}) {
+  const { w = 512, h = 128, fondo = null, color = '#E8E8E4',
+          size = 54, borde = null } = o;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  if (fondo) { x.fillStyle = fondo; x.fillRect(0, 0, w, h); }
+  if (borde) { x.strokeStyle = borde; x.lineWidth = 5; x.strokeRect(3, 3, w - 6, h - 6); }
+  x.fillStyle = color;
+  x.font = `600 ${size}px ui-monospace, Consolas, "Courier New", monospace`;
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText(texto, w / 2, h / 2 + 2);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Paneles frontales — uno por zona, con junta visible entre
+   ellos. Las aberturas son huecos reales, no calcomanías.
+   ═══════════════════════════════════════════════════════════ */
+const t = SPEC.chapa, j = SPEC.junta / 2;
+const zFrente = SPEC.D / 2 - t;
+
+function panelFrontal(y0, y1, huecos, mat) {
+  const s = new THREE.Shape();
+  const x0 = -SPEC.W / 2, x1 = SPEC.W / 2;
+  s.moveTo(x0, y0); s.lineTo(x1, y0); s.lineTo(x1, y1); s.lineTo(x0, y1); s.closePath();
+  huecos.forEach(h => s.holes.push(h));
+  const g = new THREE.ExtrudeGeometry(s, {
+    depth: t, bevelEnabled: true,
+    bevelThickness: 0.0007, bevelSize: 0.0007, bevelSegments: 1,
+    curveSegments: 48,
+  });
+  return add(g, mat, 0, 0, zFrente);
+}
+
+function huecoCirculo(cx, cy, r) {
+  const p = new THREE.Path();
+  p.absarc(cx, cy, r, 0, Math.PI * 2, true);
+  return p;
+}
+function huecoRect(cx, cy, w, h) {
+  const p = new THREE.Path();
+  const a = w / 2, b = h / 2;
+  p.moveTo(cx - a, cy - b); p.lineTo(cx - a, cy + b);
+  p.lineTo(cx + a, cy + b); p.lineTo(cx + a, cy - b);
+  p.closePath();
+  return p;
+}
+
+// zona 2 — depósito (sin aberturas al frente)
+panelFrontal(SPEC.zZocalo, SPEC.zDeposito - j, [], M.chapaA);
+// zona 3 — interacción: boca de botella + buzón de tapas
+panelFrontal(SPEC.zDeposito + j, SPEC.zInteraccion - j, [
+  huecoCirculo(0, SPEC.bocaY, SPEC.bocaR),
+  huecoCirculo(0, SPEC.tapaY, SPEC.tapaR),
+], M.chapaC);
+// zona 4 — cabezal: hueco de pantalla
+panelFrontal(SPEC.zInteraccion + j, SPEC.H, [
+  huecoRect(0, SPEC.panY, SPEC.panW, SPEC.panH),
+], M.chapaB);
+
+/* ═══════════════════════════════════════════════════════════
+   Cuerpo: laterales, trasera, tapa e interior oscuro
+   ═══════════════════════════════════════════════════════════ */
+const altoCuerpo = SPEC.H - SPEC.zZocalo;
+const yCuerpo = SPEC.zZocalo + altoCuerpo / 2;
+
+// trasera — con rejilla sobre la zona de electrónica y paso de cable abajo
+const traseraShape = new THREE.Shape();
+traseraShape.moveTo(-SPEC.W / 2, SPEC.zZocalo);
+traseraShape.lineTo( SPEC.W / 2, SPEC.zZocalo);
+traseraShape.lineTo( SPEC.W / 2, SPEC.H);
+traseraShape.lineTo(-SPEC.W / 2, SPEC.H);
+traseraShape.closePath();
+// ranuras de ventilación (la electrónica vive detrás de la zona 3)
+for (let i = 0; i < 7; i++) {
+  traseraShape.holes.push(huecoRect(0.16, 1.115 + i * 0.030, 0.26, 0.011));
+}
+// pasacables de alimentación, cerca del zócalo
+const cableY = 0.27, cableX = -0.25;
+traseraShape.holes.push(huecoCirculo(cableX, cableY, 0.017));
+
+add(new THREE.ExtrudeGeometry(traseraShape, {
+      depth: t * 2, bevelEnabled: true,
+      bevelThickness: 0.0007, bevelSize: 0.0007, bevelSegments: 1, curveSegments: 32,
+    }), M.chapaB, 0, 0, -SPEC.D / 2);
+
+// prensaestopas
+const prensa = add(new THREE.CylinderGeometry(0.019, 0.023, 0.032, 20),
+                   M.negro, cableX, cableY, -SPEC.D / 2 - 0.012);
+prensa.rotation.x = Math.PI / 2;
+// laterales
+add(new RoundedBoxGeometry(t * 2, altoCuerpo, SPEC.D - t * 4, 2, 0.002),
+    M.chapaA, -SPEC.W / 2 + t, yCuerpo, 0);
+add(new RoundedBoxGeometry(t * 2, altoCuerpo, SPEC.D - t * 4, 2, 0.002),
+    M.chapaA,  SPEC.W / 2 - t, yCuerpo, 0);
+// tapa superior
+add(new RoundedBoxGeometry(SPEC.W, t * 2, SPEC.D, 3, 0.003),
+    M.chapaC, 0, SPEC.H - t, 0);
+
+// volumen interior oscuro — que las aberturas se lean como huecos
+add(new THREE.BoxGeometry(SPEC.W - t * 5, altoCuerpo - t * 4, SPEC.D - t * 5),
+    M.interior, 0, yCuerpo, 0).castShadow = false;
+
+/* ═══════════════════════════════════════════════════════════
+   Zócalo + patas niveladoras
+   ═══════════════════════════════════════════════════════════ */
+add(new RoundedBoxGeometry(SPEC.W - 0.03, SPEC.zZocalo - SPEC.pataH, SPEC.D - 0.03, 3, 0.004),
+    M.zocalo, 0, SPEC.pataH + (SPEC.zZocalo - SPEC.pataH) / 2, 0);
+
+const gPata = new THREE.CylinderGeometry(SPEC.pataR, SPEC.pataR * 0.82, SPEC.pataH, 20);
+[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx, sz]) => {
+  add(gPata, M.goma, sx * (SPEC.W / 2 - 0.075), SPEC.pataH / 2, sz * (SPEC.D / 2 - 0.075));
+});
+
+/* ═══════════════════════════════════════════════════════════
+   Boca de botella y buzón de tapas — con aro y ducto, para que
+   se vea profundidad y no un agujero plano
+   ═══════════════════════════════════════════════════════════ */
+function abertura(cy, r, largo) {
+  add(new THREE.TorusGeometry(r + 0.006, 0.006, 16, 64), M.aro, 0, cy, zFrente + t);
+  const d = add(new THREE.CylinderGeometry(r, r, largo, 48, 1, true),
+                M.ducto, 0, cy, zFrente - largo / 2);
+  d.rotation.x = Math.PI / 2;
+  d.castShadow = false;
+}
+abertura(SPEC.bocaY, SPEC.bocaR, 0.16);
+abertura(SPEC.tapaY, SPEC.tapaR, 0.10);
+
+/* ═══════════════════════════════════════════════════════════
+   Módulo de pantalla — carcasa negra + vidrio, retranqueado
+   ═══════════════════════════════════════════════════════════ */
+add(new RoundedBoxGeometry(SPEC.panW - 0.004, SPEC.panH - 0.004, 0.030, 3, 0.003),
+    M.negro, 0, SPEC.panY, zFrente - 0.012);
+add(new THREE.PlaneGeometry(SPEC.scrW, SPEC.scrH),
+    M.vidrio, 0, SPEC.panY, zFrente + 0.0035).castShadow = false;
+
+/* ═══════════════════════════════════════════════════════════
+   Placa de identificación — va al costado sin puertas, para que
+   el vinilo de fachada no la tape cuando se aplique.
+   ═══════════════════════════════════════════════════════════ */
+const BOX_ID = 'ecobox-ucsp-01';
+const ladoPlaca = -SPEC.ladoPuertas;
+const xPlaca = ladoPlaca * (SPEC.W / 2);
+const placaW = 0.175, placaH = 0.046, placaY = 1.30;
+
+add(new RoundedBoxGeometry(0.005, placaH + 0.009, placaW + 0.009, 2, 0.002),
+    M.aro, xPlaca + ladoPlaca * 0.002, placaY, 0);
+
+const caraPlaca = add(new THREE.PlaneGeometry(placaW, placaH),
+  new THREE.MeshStandardMaterial({
+    map: texturaTexto(BOX_ID, { w: 640, h: 170, fondo: '#20242A',
+                                color: '#D6DADD', size: 62, borde: '#7E868C' }),
+    metalness: 0.42, roughness: 0.46,
+  }), xPlaca + ladoPlaca * 0.0049, placaY, 0);
+caraPlaca.rotation.y = ladoPlaca * Math.PI / 2;
+caraPlaca.castShadow = false;
+
+/* ═══════════════════════════════════════════════════════════
+   Antena 4G
+   ═══════════════════════════════════════════════════════════ */
+const antena = new THREE.Group();
+antena.position.set(SPEC.W / 2 - 0.10, SPEC.H, -SPEC.D / 2 + 0.11);
+box.add(antena);
+add(new THREE.CylinderGeometry(0.017, 0.020, 0.012, 24), M.negro, 0, 0.006, 0, antena);
+add(new THREE.CapsuleGeometry(0.008, SPEC.antenaH - 0.016, 4, 16),
+    M.negro, 0, 0.012 + SPEC.antenaH / 2, 0, antena);
+
+/* ═══════════════════════════════════════════════════════════
+   Puertas de mantenimiento — ambas al mismo costado
+   ═══════════════════════════════════════════════════════════ */
+const ladoX = SPEC.ladoPuertas * (SPEC.W / 2);
+const puertas = [];
+
+function puerta(ancho, alto, cy, conCerradura) {
+  // pivote en el borde trasero, para que abra hacia afuera.
+  // se monta 4 mm sobresalida para que no pelee con el panel lateral.
+  const piv = new THREE.Group();
+  piv.position.set(ladoX + SPEC.ladoPuertas * 0.004, cy, -ancho / 2);
+  box.add(piv);
+
+  const g = new THREE.Group();
+  g.position.set(0, 0, ancho / 2);
+  piv.add(g);
+
+  add(new RoundedBoxGeometry(0.010, alto, ancho, 3, 0.004), M.puerta, 0, 0, 0, g);
+
+  // bisagras en el borde del pivote
+  // pasador vertical: el eje por defecto del cilindro (Y) ya es el correcto
+  const gBis = new THREE.CylinderGeometry(0.008, 0.008, 0.038, 16);
+  [-1, 1].forEach(s => {
+    add(gBis, M.bisagra,
+        SPEC.ladoPuertas * 0.004, s * (alto / 2 - 0.045), -ancho / 2 + 0.012, g);
+  });
+
+  if (conCerradura) {
+    const c = add(new THREE.CylinderGeometry(0.011, 0.011, 0.014, 20), M.aro,
+                  SPEC.ladoPuertas * 0.010, 0, ancho / 2 - 0.045, g);
+    c.rotation.z = Math.PI / 2;
+    add(new THREE.BoxGeometry(0.004, 0.003, 0.013), M.negro,
+        SPEC.ladoPuertas * 0.017, 0, ancho / 2 - 0.045, g);
+  } else {
+    // pestillo simple: tirador embutido
+    add(new RoundedBoxGeometry(0.008, 0.026, 0.080, 2, 0.003), M.bisagra,
+        SPEC.ladoPuertas * 0.008, 0, ancho / 2 - 0.070, g);
+  }
+
+  puertas.push(piv);
+  return piv;
+}
+
+puerta(SPEC.ptaElecW, SPEC.ptaElecH, SPEC.ptaElecY, true);   // electrónica — cerradura
+puerta(SPEC.ptaDepW,  SPEC.ptaDepH,  SPEC.ptaDepY,  false);  // depósito — pestillo
+
+/* ═══════════════════════════════════════════════════════════
+   Tornillería — chapa atornillada, sin pintar
+   ═══════════════════════════════════════════════════════════ */
+const gTornillo = new THREE.CylinderGeometry(0.0042, 0.0042, 0.0026, 14);
+const grpTornillos = new THREE.Group();
+box.add(grpTornillos);
+
+function fila(x0, x1, y, n) {
+  for (let i = 0; i < n; i++) {
+    const x = n === 1 ? (x0 + x1) / 2 : x0 + (x1 - x0) * (i / (n - 1));
+    const m = add(gTornillo, M.tornillo, x, y, zFrente + t + 0.0013, grpTornillos);
+    m.rotation.x = Math.PI / 2;
+  }
+}
+function columna(z0, z1, y, n, sx) {
+  for (let i = 0; i < n; i++) {
+    const z = z0 + (z1 - z0) * (i / (n - 1));
+    const m = add(gTornillo, M.tornillo, sx * (SPEC.W / 2 - t) , y, z, grpTornillos);
+    m.rotation.z = Math.PI / 2;
+  }
+}
+
+const bx = SPEC.W / 2 - 0.026;
+// bordes horizontales de cada panel frontal
+fila(-bx, bx, SPEC.zZocalo + 0.022, 5);
+fila(-bx, bx, SPEC.zDeposito - 0.022, 5);
+fila(-bx, bx, SPEC.zDeposito + 0.022, 5);
+fila(-bx, bx, SPEC.zInteraccion - 0.022, 5);
+fila(-bx, bx, SPEC.zInteraccion + 0.022, 5);
+fila(-bx, bx, SPEC.H - 0.022, 5);
+// laterales
+const bz = SPEC.D / 2 - 0.030;
+[0.42, 0.75, 1.06, 1.60].forEach(y => {
+  columna(-bz, bz, y, 3, -1);
+});
+columna(-bz, bz, 1.60, 3, 1);
+columna(-bz, bz, 0.30, 3, 1);
+
+/* ═══════════════════════════════════════════════════════════
+   Marcadores de zona (opcional)
+   ═══════════════════════════════════════════════════════════ */
+const grpCotas = new THREE.Group();
+grpCotas.visible = false;
+scene.add(grpCotas);
+
+const matCota = new THREE.LineBasicMaterial({ color: 0x8A4030 });
+const rCota = 0.64;
+[SPEC.zZocalo, SPEC.zDeposito, SPEC.zInteraccion, SPEC.H].forEach(y => {
+  const pts = [];
+  for (let i = 0; i <= 72; i++) {
+    const a = (i / 72) * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(a) * rCota, y, Math.sin(a) * rCota));
+  }
+  grpCotas.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), matCota));
+});
+
+// etiqueta a media altura de cada franja: el anillo solo marca el límite,
+// el texto dice de qué zona se trata
+[
+  ['1 · zócalo  0–15',        SPEC.zZocalo / 2],
+  ['2 · depósito  15–100',    (SPEC.zZocalo + SPEC.zDeposito) / 2],
+  ['3 · interacción  100–140',(SPEC.zDeposito + SPEC.zInteraccion) / 2],
+  ['4 · cabezal  140–175',    (SPEC.zInteraccion + SPEC.H) / 2],
+].forEach(([txt, y]) => {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texturaTexto(txt, { w: 640, h: 96, color: '#8A4030', size: 46 }),
+    transparent: true, depthTest: false,
+  }));
+  sp.position.set(0.82, y, 0.34);
+  sp.scale.set(0.44, 0.066, 1);
+  grpCotas.add(sp);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   Controles de interfaz
+   ═══════════════════════════════════════════════════════════ */
+const cbGirar = document.getElementById('cbGirar');
+const cbTorn = document.getElementById('cbTorn');
+const cbPuertas = document.getElementById('cbPuertas');
+const cbCotas = document.getElementById('cbCotas');
+
+cbGirar.onchange = () => controls.autoRotate = cbGirar.checked;
+cbTorn.onchange  = () => grpTornillos.visible = cbTorn.checked;
+cbCotas.onchange = () => grpCotas.visible = cbCotas.checked;
+
+let aperturaObjetivo = 0, aperturaActual = 0;
+cbPuertas.onchange = () => aperturaObjetivo = cbPuertas.checked ? 1 : 0;
+
+/* exportadores — para que Hames lo abra en su CAD */
+function descargar(blob, nombre) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+document.getElementById('btnGlb').onclick = () => {
+  new GLTFExporter().parse(box, r => {
+    descargar(new Blob([r], { type: 'model/gltf-binary' }), 'ecobox-exterior.glb');
+  }, e => console.error(e), { binary: true });
+};
+document.getElementById('btnStl').onclick = () => {
+  const stl = new STLExporter().parse(box, { binary: true });
+  descargar(new Blob([stl], { type: 'model/stl' }), 'ecobox-exterior.stl');
+};
+
+/* ═══════════════════════════════════════════════════════════
+   Bucle
+   ═══════════════════════════════════════════════════════════ */
+addEventListener('resize', () => {
+  camera.aspect = ancho() / alto();
+  camera.updateProjectionMatrix();
+  renderer.setSize(ancho(), alto());
+});
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduce) { controls.autoRotate = false; cbGirar.checked = false; }
+
+// handle de depuración — útil para inspeccionar medidas desde la consola
+window.__ecobox = { scene, box, camera, renderer, controls, SPEC, THREE };
+
+function animar() {
+  requestAnimationFrame(animar);
+  aperturaActual += (aperturaObjetivo - aperturaActual) * 0.10;
+  // positivo = la hoja barre hacia afuera del costado (ver SPEC.ladoPuertas)
+  const ang = aperturaActual * (Math.PI * 0.42) * SPEC.ladoPuertas;
+  puertas.forEach(p => p.rotation.y = ang);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animar();
+</script>
+</body>
+</html>
