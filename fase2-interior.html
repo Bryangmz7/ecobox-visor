@@ -136,9 +136,13 @@ const SPEC = {
   tapaR: 0.020, tapaY: 1.155,
 
   rampaAng: 55, rampaCaida: 0.25, rampaAncho: 0.30, rampaZ0: 0.30,
+  // canal cerrado: alto ≥ Ø de la boca, si no la botella que entra no pasa
+  canalAlto: 0.12,
 
   // depósito dimensionado al volumen real disponible de la zona 2
-  bolsaW: 0.66, bolsaH: 0.76, bolsaD: 0.48, bolsaY: 0.57, bolsaZ: 0.03,
+  // la bolsa se corre al frente para dejar una franja trasera libre: ahí van
+  // la bandeja de tapas y su ducto, que antes se solapaban con ella
+  bolsaW: 0.66, bolsaH: 0.76, bolsaD: 0.46, bolsaY: 0.57, bolsaZ: 0.06,
 
   // gabinete estanco: así lo montaría un instalador, no sellando media máquina
   cajaW: 0.30, cajaH: 0.28, cajaD: 0.12, cajaX: -0.11, cajaY: 1.20,
@@ -235,7 +239,6 @@ const raiz = new THREE.Group(); scene.add(raiz);
 const carcasa = new THREE.Group(); raiz.add(carcasa);
 const grpCables = new THREE.Group(); raiz.add(grpCables);
 const grpTorn = new THREE.Group(); raiz.add(grpTorn);
-const grpHalos = new THREE.Group(); grpHalos.visible = false; raiz.add(grpHalos);
 
 const piezas = [], modulos = [], sensores = [];
 
@@ -310,41 +313,48 @@ pieza(new THREE.TorusGeometry(SPEC.tapaR + 0.005, 0.005, 14, 40), M.metalPul,
    M2 · VALIDACIÓN — escala real: son piezas de 2 cm
    ═══════════════════════════════════════════════════════════ */
 const m2 = modulo('M2', 'M2 · Validación', [0.54, 0.06, 0.26]);
-const pIR = puntoRampa(0.30);
+// a media altura del canal: es donde pasa el cuerpo de la botella
+const pIR = puntoRampa(0.30, SPEC.canalAlto / 2);
 
-function halo(x, y, z, r) {
+const halos = [];
+function halo(x, y, z, r, padre) {
   const h = new THREE.Mesh(new THREE.TorusGeometry(r, 0.0022, 10, 34),
     new THREE.MeshBasicMaterial({ color: 0xA83A2C, transparent: true, opacity: 0.9 }));
   h.position.set(x, y, z);
-  grpHalos.add(h);
+  h.visible = false;
+  padre.add(h);      // cuelga del módulo para que siga a su sensor en el despiece
+  halos.push(h);
   return h;
 }
 
 pieza(new RoundedBoxGeometry(0.016, 0.022, 0.012, 2, 0.002), M.pcbAzul,
   [-SPEC.rampaAncho / 2 - 0.014, pIR[1], pIR[2]],
   { nombre: 'Emisor IR', sensor: true,
-    funcion: 'Emite el haz que cruza la rampa. Mide 16 mm de verdad — si lo agrandara para que se viera mejor, el modelo mentiría sobre las holguras. Para ubicarlo, usa "Resaltar sensores".' }, m2);
-halo(-SPEC.rampaAncho / 2 - 0.014, pIR[1], pIR[2], 0.030);
+    funcion: 'Emite el haz que cruza el canal. Mide 16 mm de verdad — si lo agrandara para que se viera mejor, el modelo mentiría sobre las holguras. Para ubicarlo, usa "Resaltar sensores". Va montado por fuera de la pared: ni la botella ni una mano lo alcanzan.' }, m2);
+halo(-SPEC.rampaAncho / 2 - 0.014, pIR[1], pIR[2], 0.030, m2);
 
 pieza(new RoundedBoxGeometry(0.016, 0.022, 0.012, 2, 0.002), M.pcbAzul,
   [SPEC.rampaAncho / 2 + 0.014, pIR[1], pIR[2]],
   { nombre: 'Receptor IR', sensor: true,
     funcion: 'Detecta el corte del haz: cada corte suma +1. Aquí nace el dato que se le vende a la institución.',
     abierta: 'A probar en banco: el PET transparente deja pasar infrarrojo. Si el haz no se corta de forma fiable, el plan B es una paleta mecánica con microswitch.' }, m2);
-halo(SPEC.rampaAncho / 2 + 0.014, pIR[1], pIR[2], 0.030);
+halo(SPEC.rampaAncho / 2 + 0.014, pIR[1], pIR[2], 0.030, m2);
 
 const haz = new THREE.Mesh(
   new THREE.CylinderGeometry(0.0016, 0.0016, SPEC.rampaAncho + 0.02, 8),
   new THREE.MeshBasicMaterial({ color: 0xC24A32, transparent: true, opacity: 0.75 }));
 haz.position.set(0, pIR[1], pIR[2]); haz.rotation.z = Math.PI / 2; m2.add(haz);
 
-const pMat = puntoRampa(0.62, 0.030);
+// por fuera de la pared, sensando hacia adentro. Antes estaba a 7,8 cm del eje:
+// dentro del canal de 30 cm, o sea justo en el paso de la botella.
+const pMat = puntoRampa(0.62, SPEC.canalAlto / 2);
+const xMat = SPEC.rampaAncho / 2 + 0.026;
 const sMat = pieza(new THREE.CylinderGeometry(0.009, 0.009, 0.046, 20), M.metalPul,
-  [0.078, pMat[1], pMat[2]],
+  [xMat, pMat[1], pMat[2]],
   { nombre: 'Sensor de material', sensor: true,
-    funcion: 'Descarta lata y vidrio: si detecta metal o peso fuera de rango, el objeto no suma. Es el componente que sostiene la promesa de "solo PET".' }, m2);
-sMat.rotation.x = RAD;
-halo(0.078, pMat[1], pMat[2], 0.026);
+    funcion: 'Descarta lata y vidrio: si detecta metal o peso fuera de rango, el objeto no suma. Es el componente que sostiene la promesa de "solo PET". Va por fuera del canal, sensando a través de la pared.' }, m2);
+sMat.rotation.z = Math.PI / 2;
+halo(xMat, pMat[1], pMat[2], 0.026, m2);
 
 /* ═══════════════════════════════════════════════════════════
    M3 · GUIADO — rampa con soportes reales y tabique divisorio
@@ -356,11 +366,26 @@ const rampa = pieza(new THREE.BoxGeometry(SPEC.rampaAncho, 0.004, rampaLargo), M
   { nombre: 'Rampa 50–60°', funcion: 'Superficie continua entre la boca y el depósito. Reemplaza al embudo con codo: una botella de 30 cm no puede girar 90° en un ducto de 11 cm, se atoraría siempre. Aquí solo desliza.' }, m3);
 rampa.rotation.x = -RAD;
 
+// desplazamiento perpendicular a la rampa (para paredes y tapa del canal)
+const perp = k => [0, rampaCy + k * Math.cos(RAD), rampaCz + k * Math.sin(RAD)];
+
 [-1, 1].forEach(s => {
-  const p = detalle(new THREE.BoxGeometry(0.004, 0.075, rampaLargo), M.rampa,
-    [s * SPEC.rampaAncho / 2, rampaCy + 0.034, rampaCz], m3);
+  const q = perp(SPEC.canalAlto / 2);
+  const p = detalle(new THREE.BoxGeometry(0.004, SPEC.canalAlto, rampaLargo), M.rampa,
+    [s * SPEC.rampaAncho / 2, q[1], q[2]], m3);
   p.rotation.x = -RAD;
 });
+
+// tapa del canal: convierte la rampa en ducto cerrado. Sin ella, una mano
+// entra por la boca y alcanza sensores y cables — y el conteo es el producto.
+// más corta que la rampa y corrida hacia abajo: si abarcara todo el largo,
+// el extremo alto asomaría por delante de la fachada. Arriba ya cierra el túnel.
+const tapaLargo = rampaLargo - 0.085, tapaBaja = 0.05;
+const qT = perp(SPEC.canalAlto);
+const tapaCanal = pieza(new THREE.BoxGeometry(SPEC.rampaAncho, 0.003, tapaLargo), M.rampa,
+  [0, qT[1] - tapaBaja * Math.sin(RAD), qT[2] - tapaBaja * Math.cos(RAD)],
+  { nombre: 'Tapa del canal', funcion: 'Cierra la rampa por arriba y la convierte en un ducto. Cumple dos funciones: impide que la botella rebote fuera del canal, y bloquea el acceso de una mano a los sensores y el cableado desde la boca. Como el conteo es lo que se vende, dejar la barrera IR al alcance sería un hueco de fraude.' }, m3);
+tapaCanal.rotation.x = -RAD;
 
 // escuadras de fijación a los laterales: la rampa no flota, va atornillada
 [0.18, 0.52, 0.86].forEach(t => {
@@ -390,7 +415,7 @@ rampa.rotation.x = -RAD;
   // paso de botellas (bajo la rampa)
   s.holes.push(hueco(0, rampaZ1 + 0.075, SPEC.rampaAncho + 0.02, 0.20));
   // paso del ducto de tapas
-  const ht = new THREE.Path(); ht.absarc(-0.28, -0.05, 0.030, 0, Math.PI * 2, true); s.holes.push(ht);
+  const ht = new THREE.Path(); ht.absarc(-0.31, -0.20, 0.032, 0, Math.PI * 2, true); s.holes.push(ht);
   // paso de la canaleta troncal
   s.holes.push(hueco(0.31, -0.30, 0.055, 0.055));
 
@@ -398,22 +423,54 @@ rampa.rotation.x = -RAD;
     [0, SPEC.zDeposito, 0],
     { nombre: 'Tabique divisorio', funcion: 'Separa la zona de interacción del depósito. Solo deja tres pasos: botellas, tapas y canaleta. Es lo que mantiene el volumen de botellas fuera del área de mantenimiento.' }, m3);
   tab.rotation.x = Math.PI / 2;
+
+  // collar de descarga: tubo rectangular que baja del tabique a la boca de la
+  // bolsa, para que la botella no caiga al aire libre dentro del depósito
+  const sc = new THREE.Shape();
+  const ow = SPEC.rampaAncho + 0.03, od = 0.21, iw = SPEC.rampaAncho + 0.02, id = 0.20;
+  sc.moveTo(-ow/2, -od/2); sc.lineTo(ow/2, -od/2); sc.lineTo(ow/2, od/2); sc.lineTo(-ow/2, od/2); sc.closePath();
+  const hc = new THREE.Path();
+  hc.moveTo(-iw/2, -id/2); hc.lineTo(-iw/2, id/2); hc.lineTo(iw/2, id/2); hc.lineTo(iw/2, -id/2); hc.closePath();
+  sc.holes.push(hc);
+  const collar = pieza(new THREE.ExtrudeGeometry(sc, { depth: 0.075, bevelEnabled: false }), M.chapa,
+    [0, SPEC.zDeposito, rampaZ1 + 0.075],
+    { nombre: 'Collar de descarga', funcion: 'Prolonga el paso del tabique hasta la boca de la bolsa. Sin él la botella cae al aire libre dentro del depósito y puede quedar fuera de la bolsa, o rebotar contra la pared. Cierra el último tramo del recorrido.' }, m3);
+  collar.rotation.x = Math.PI / 2;
 }
 
-const ducto = pieza(new THREE.CylinderGeometry(0.026, 0.026, 0.34, 24, 1, true), M.plastGris,
-  [-0.20, SPEC.tapaY - 0.17, 0.20],
-  { nombre: 'Ducto de tapas', funcion: 'Lleva la tapa a su bandeja por un camino propio, sin cruzarse nunca con la botella ni con la rampa.' }, m3);
-ducto.rotation.set(0.42, 0, 0.34);
+// trazado real: arranca pegado al buzón, pasa por debajo de la rampa, cruza
+// el tabique por su agujero y descarga dentro de la bandeja.
+const curvaTapas = new THREE.CatmullRomCurve3([
+  new THREE.Vector3( 0.00, SPEC.tapaY,  0.318),
+  new THREE.Vector3(-0.10, 1.140,  0.265),
+  new THREE.Vector3(-0.22, 1.095,  0.130),
+  new THREE.Vector3(-0.30, 1.045, -0.060),
+  new THREE.Vector3(-0.31, 1.000, -0.200),   // cruza el tabique por su agujero
+  new THREE.Vector3(-0.28, 0.800, -0.265),   // baja por detrás de la bolsa
+  new THREE.Vector3(-0.22, 0.480, -0.270),   // descarga dentro de la bandeja
+]);
+pieza(new THREE.TubeGeometry(curvaTapas, 80, 0.026, 18, false), M.canal, [0, 0, 0],
+  { nombre: 'Ducto de tapas', funcion: 'Lleva la tapa desde el buzón hasta su bandeja por un camino propio: pasa bajo la rampa, cruza el tabique por su agujero y descarga dentro de la bandeja. Nunca se cruza con la botella.' }, m3);
 
 /* ═══════════════════════════════════════════════════════════
    M4 · DEPÓSITO — dimensionado al volumen real de la zona 2
    ═══════════════════════════════════════════════════════════ */
 const m4 = modulo('M4', 'M4 · Depósito', [0, -0.01, 0.62]);
 
-const aroB = pieza(new THREE.TorusGeometry(0.30, 0.009, 14, 52), M.metalPul,
-  [0, SPEC.bolsaY + SPEC.bolsaH / 2, SPEC.bolsaZ],
-  { nombre: 'Aro portabolsa', funcion: 'Sujeta la boca de la bolsa abierta justo bajo el paso del tabique. Al retirarla se libera del aro sin manipular botellas sueltas.' }, m4);
-aroB.rotation.x = Math.PI / 2;
+// marco rectangular, no aro: la bolsa es rectangular y un círculo de 60 cm
+// se salía por delante de la fachada
+{
+  const sf = new THREE.Shape();
+  const ow = SPEC.bolsaW + 0.02, od = SPEC.bolsaD + 0.02, iw = SPEC.bolsaW - 0.02, idd = SPEC.bolsaD - 0.02;
+  sf.moveTo(-ow/2, -od/2); sf.lineTo(ow/2, -od/2); sf.lineTo(ow/2, od/2); sf.lineTo(-ow/2, od/2); sf.closePath();
+  const hf = new THREE.Path();
+  hf.moveTo(-iw/2, -idd/2); hf.lineTo(-iw/2, idd/2); hf.lineTo(iw/2, idd/2); hf.lineTo(iw/2, -idd/2); hf.closePath();
+  sf.holes.push(hf);
+  const aroB = pieza(new THREE.ExtrudeGeometry(sf, { depth: 0.014, bevelEnabled: false }), M.metalPul,
+    [0, SPEC.bolsaY + SPEC.bolsaH / 2, SPEC.bolsaZ],
+    { nombre: 'Marco portabolsa', funcion: 'Sujeta la boca de la bolsa abierta justo bajo el paso del tabique. Al retirarla se libera del marco sin manipular botellas sueltas.' }, m4);
+  aroB.rotation.x = Math.PI / 2;
+}
 
 pieza(new RoundedBoxGeometry(SPEC.bolsaW, SPEC.bolsaH, SPEC.bolsaD, 5, 0.06), M.bolsa,
   [0, SPEC.bolsaY, SPEC.bolsaZ],
@@ -426,17 +483,17 @@ pieza(new RoundedBoxGeometry(0.045, 0.020, 0.015, 2, 0.002), M.pcbAzul,
     funcion: 'Mide cuánto falta para llenar la bolsa. Es el mismo sensor del v1, pero reubicado: para medir nivel sirve, para contar botellas no.' }, m4);
 [-0.016, 0.016].forEach(dx =>
   detalle(new THREE.CylinderGeometry(0.008, 0.008, 0.012, 16), M.metalPul, [dx, 0.975, -0.16], m4));
-halo(0, 0.982, -0.16, 0.040);
+halo(0, 0.982, -0.16, 0.040, m4);
 
 pieza(new RoundedBoxGeometry(0.030, 0.010, 0.010, 2, 0.002), M.plastGris,
   [SPEC.ladoPuertas * 0.375, 0.81, -0.28],
   { nombre: 'Sensor de puerta', sensor: true,
     funcion: 'Detecta la puerta de mantenimiento abierta y pausa el conteo. Sin él, un vaciado podría registrarse como depósitos y contaminar el dato que se vende.' }, m4);
-halo(SPEC.ladoPuertas * 0.375, 0.81, -0.28, 0.028);
+halo(SPEC.ladoPuertas * 0.375, 0.81, -0.28, 0.028, m4);
 
-pieza(new RoundedBoxGeometry(0.16, 0.34, 0.22, 3, 0.012), M.plastGris,
-  [-0.29, 0.36, -0.14],
-  { nombre: 'Bandeja de tapas', funcion: 'Volumen aparte para las tapas. Se vacía por la misma puerta que la bolsa, pero mantiene los dos plásticos sin mezclar — tienen distinto valor de reciclaje.' }, m4);
+pieza(new RoundedBoxGeometry(0.22, 0.33, 0.12, 3, 0.012), M.plastGris,
+  [-0.19, 0.355, -0.27],
+  { nombre: 'Bandeja de tapas', funcion: 'Volumen aparte para las tapas, en la franja trasera que la bolsa deja libre. Unos 8 litros: sobra para las ~105 tapas de una bolsa llena. Se vacía por la misma puerta, pero mantiene los dos plásticos sin mezclar — tienen distinto valor de reciclaje.' }, m4);
 
 /* ═══════════════════════════════════════════════════════════
    M5 · CONTROL — gabinete estanco, no un compartimento sellado
@@ -606,9 +663,11 @@ const grpRuta = new THREE.Group(); grpRuta.visible = false; raiz.add(grpRuta);
   const pts = [
     new THREE.Vector3(0, SPEC.bocaY, SPEC.bocaZ + 0.12),
     new THREE.Vector3(0, SPEC.bocaY, SPEC.bocaZ - 0.06),
-    ...[0.15, 0.45, 0.75, 1].map(t => new THREE.Vector3(...puntoRampa(t, 0.022))),
-    new THREE.Vector3(0.01, 0.90, 0.10),
-    new THREE.Vector3(0.02, 0.62, 0.05),
+    // a media altura del canal cerrado, no rozando el piso de la rampa
+    ...[0.15, 0.45, 0.75, 1].map(t => new THREE.Vector3(...puntoRampa(t, 0.045))),
+    new THREE.Vector3(0.00, 0.96, 0.17),   // atraviesa el collar de descarga
+    new THREE.Vector3(0.01, 0.80, 0.10),
+    new THREE.Vector3(0.02, 0.58, 0.05),
   ];
   const curva = new THREE.CatmullRomCurve3(pts);
   grpRuta.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 90, 0.0022, 8, false),
@@ -691,7 +750,7 @@ rgExp.oninput = () => {
 cbCarcasa.onchange = () => carcasa.visible = cbCarcasa.checked;
 cbCables.onchange = () => grpCables.visible = cbCables.checked;
 cbTorn.onchange = () => grpTorn.visible = cbTorn.checked;
-cbSens.onchange = () => grpHalos.visible = cbSens.checked;
+cbSens.onchange = () => halos.forEach(h => h.visible = cbSens.checked);
 cbZonas.onchange = () => grpZonas.visible = cbZonas.checked;
 cbRuta.onchange = () => grpRuta.visible = cbRuta.checked;
 cbGirar.onchange = () => controls.autoRotate = cbGirar.checked;
@@ -727,9 +786,9 @@ function animar(ms) {
   grpCables.traverse(o => { if (o.isMesh && o.material.transparent) o.material.opacity = desv; });
   if (cbCarcasa.checked) carcasa.visible = expActual < 0.45;
 
-  if (grpHalos.visible) {
+  if (cbSens.checked) {
     const p = 0.5 + 0.5 * Math.sin(ms * 0.005);
-    grpHalos.children.forEach(h => { h.material.opacity = 0.35 + 0.6 * p; h.scale.setScalar(1 + 0.18 * p); });
+    halos.forEach(h => { h.material.opacity = 0.35 + 0.6 * p; h.scale.setScalar(1 + 0.18 * p); });
   }
 
   if (grpRuta.visible && !reduce) {
