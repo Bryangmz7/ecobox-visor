@@ -51,6 +51,25 @@
                  font-size:10px;line-height:1.45;}
   #tag{position:fixed;bottom:14px;right:16px;z-index:10;font-size:10px;
        color:#8A4030;border:1px solid #8A4030;padding:4px 9px;background:rgba(252,252,251,.85);}
+
+  #simPanel{
+    left:16px;bottom:16px;padding:12px 16px;width:min(460px, calc(100vw - 340px));
+  }
+  .simTop{display:flex;align-items:center;gap:9px;font-size:12px;color:#1E1F1E;}
+  .led{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#B9B9B4;}
+  .led.ok{background:#3E7D4A;}
+  .led.error{background:#A83A2C;}
+  .led.espera{background:#B3821F;animation:parpadeo 1s infinite;}
+  @keyframes parpadeo{50%{opacity:.35;}}
+  .simCuenta{margin-left:auto;font-variant-numeric:tabular-nums;color:#8A4030;font-weight:600;}
+  .simReal{font-size:9.5px;color:#6A6A64;margin:4px 0 0 18px;}
+  .simPayload{
+    font-size:10px;line-height:1.5;background:#EFEEEA;border:1px solid #D2D2CD;
+    padding:7px 9px;margin:8px 0 0;white-space:pre;color:#1E1F1E;
+  }
+  .simFoot{font-size:9.5px;color:#6A6A64;margin-top:9px;border-top:1px solid #D2D2CD;padding-top:8px;}
+  .simFoot b{color:#1E1F1E;font-variant-numeric:tabular-nums;}
+  @media (max-width:900px){ #simPanel{width:calc(100vw - 32px); left:16px; bottom:16px;} }
 </style>
 </head>
 <body>
@@ -82,6 +101,12 @@
   </div>
 
   <div class="grupo">
+    <div class="tit">Simulación del flujo</div>
+    <div class="btns"><button id="btnSim">▶ Reproducir</button><button id="btnSimStop">■ Detener</button></div>
+    <div class="row" style="margin-top:8px;"><input type="checkbox" id="cbSinSenal"><label for="cbSinSenal">Simular sin señal (reintento)</label></div>
+  </div>
+
+  <div class="grupo">
     <div class="tit">Selección</div>
     <div class="btns">
       <button id="btnAislar" disabled>Aislar</button>
@@ -105,6 +130,17 @@
     <p id="infoFun"></p>
     <div class="abierta" id="infoAbierta" hidden></div>
   </div>
+</div>
+
+<div class="hud" id="simPanel">
+  <div class="simTop">
+    <span class="led neutral" id="simLed"></span>
+    <span id="simLabel">En espera — pulsa Reproducir</span>
+    <span class="simCuenta" id="simCuenta" hidden>30 s</span>
+  </div>
+  <div id="simReal" class="simReal"></div>
+  <pre id="simPayload" class="simPayload" hidden></pre>
+  <div class="simFoot">Botellas contadas en esta demo: <b id="simContador">0</b> · una botella por sesión, simplificado</div>
 </div>
 
 <div id="tag">componentes referenciales — los valida Hames</div>
@@ -331,14 +367,14 @@ pieza(new RoundedBoxGeometry(0.016, 0.022, 0.012, 2, 0.002), M.pcbAzul,
   [-SPEC.rampaAncho / 2 - 0.014, pIR[1], pIR[2]],
   { nombre: 'Emisor IR', sensor: true,
     funcion: 'Emite el haz que cruza el canal. Mide 16 mm de verdad — si lo agrandara para que se viera mejor, el modelo mentiría sobre las holguras. Para ubicarlo, usa "Resaltar sensores". Va montado por fuera de la pared: ni la botella ni una mano lo alcanzan.' }, m2);
-halo(-SPEC.rampaAncho / 2 - 0.014, pIR[1], pIR[2], 0.030, m2);
+const haloEmisor = halo(-SPEC.rampaAncho / 2 - 0.014, pIR[1], pIR[2], 0.030, m2);
 
 pieza(new RoundedBoxGeometry(0.016, 0.022, 0.012, 2, 0.002), M.pcbAzul,
   [SPEC.rampaAncho / 2 + 0.014, pIR[1], pIR[2]],
   { nombre: 'Receptor IR', sensor: true,
     funcion: 'Detecta el corte del haz: cada corte suma +1. Aquí nace el dato que se le vende a la institución.',
     abierta: 'A probar en banco: el PET transparente deja pasar infrarrojo. Si el haz no se corta de forma fiable, el plan B es una paleta mecánica con microswitch.' }, m2);
-halo(SPEC.rampaAncho / 2 + 0.014, pIR[1], pIR[2], 0.030, m2);
+const haloReceptor = halo(SPEC.rampaAncho / 2 + 0.014, pIR[1], pIR[2], 0.030, m2);
 
 const haz = new THREE.Mesh(
   new THREE.CylinderGeometry(0.0016, 0.0016, SPEC.rampaAncho + 0.02, 8),
@@ -354,7 +390,7 @@ const sMat = pieza(new THREE.CylinderGeometry(0.009, 0.009, 0.046, 20), M.metalP
   { nombre: 'Sensor de material', sensor: true,
     funcion: 'Descarta lata y vidrio: si detecta metal o peso fuera de rango, el objeto no suma. Es el componente que sostiene la promesa de "solo PET". Va por fuera del canal, sensando a través de la pared.' }, m2);
 sMat.rotation.z = Math.PI / 2;
-halo(xMat, pMat[1], pMat[2], 0.026, m2);
+const haloMaterial = halo(xMat, pMat[1], pMat[2], 0.026, m2);
 
 /* ═══════════════════════════════════════════════════════════
    M3 · GUIADO — rampa con soportes reales y tabique divisorio
@@ -512,13 +548,13 @@ pieza(new THREE.BoxGeometry(SPEC.cajaW - 0.02, SPEC.cajaH - 0.02, 0.004), M.tapa
   { nombre: 'Tapa de policarbonato', funcion: 'Cubierta transparente: permite ver los LED de estado sin abrir el gabinete. Es un producto de catálogo, no una pieza a fabricar.' }, m5);
 
 const zi = cajaZ + 0.02;
-pieza(new RoundedBoxGeometry(0.055, 0.028, 0.013, 2, 0.002), M.pcb,
+const esp32Mesh = pieza(new RoundedBoxGeometry(0.055, 0.028, 0.013, 2, 0.002), M.pcb,
   [SPEC.cajaX - 0.055, SPEC.cajaY + 0.055, zi],
   { nombre: 'ESP32', funcion: 'Lee los sensores, manda el servo, guarda la cola offline y dispara el POST a Supabase. El conteo va del sensor al ESP32 y de ahí a la nube, sin pasar por ninguna interfaz web.' }, m5);
 detalle(new THREE.BoxGeometry(0.014, 0.010, 0.004), M.metalPul,
   [SPEC.cajaX - 0.073, SPEC.cajaY + 0.055, zi + 0.008], m5);
 
-pieza(new RoundedBoxGeometry(0.060, 0.050, 0.010, 2, 0.002), M.abierta,
+const modulo4GMesh = pieza(new RoundedBoxGeometry(0.060, 0.050, 0.010, 2, 0.002), M.abierta,
   [SPEC.cajaX + 0.055, SPEC.cajaY + 0.045, zi],
   { nombre: 'Módulo 4G', funcion: 'Envía cada depósito y el latido cada 5 minutos a Supabase.',
     abierta: 'Decisión abierta: puede ir aquí colgado del ESP32 (SIM7600) o vivir en el kiosko con su propia SIM. Lo define Hames con Nikolas — el cable rojo es la ruta tentativa.' }, m5);
@@ -589,10 +625,10 @@ cable([[0.31, 1.10, -0.315], [0.31, 1.145, -0.315], [0.05, 1.145, -0.315],
 cable([[SPEC.cajaX + 0.03, 1.06, -0.30], [SPEC.cajaX + 0.03, 1.30, -0.318],
        [SPEC.cajaX, 1.36, -0.315]], SIG);
 // ramales desde la canaleta superior a cada componente
-cable([[0.06, 1.36, -0.315], [0.10, 1.34, -0.05], [0.09, 1.32, 0.24], [0.085, 1.30, 0.295]], ACT);
-cable([[-0.16, 1.36, -0.315], [-0.19, 1.30, -0.05], [-0.18, 1.22, 0.16], [-0.163, 1.19, 0.205]], SIG);
-cable([[-0.10, 1.36, -0.315], [0.20, 1.31, -0.05], [0.19, 1.22, 0.16], [0.163, 1.19, 0.205]], SIG);
-cable([[-0.03, 1.36, -0.315], [0.11, 1.28, -0.02], [0.10, 1.16, 0.12], [0.085, 1.11, 0.155]], SIG);
+const cableServo = cable([[0.06, 1.36, -0.315], [0.10, 1.34, -0.05], [0.09, 1.32, 0.24], [0.085, 1.30, 0.295]], ACT);
+const cableIRe = cable([[-0.16, 1.36, -0.315], [-0.19, 1.30, -0.05], [-0.18, 1.22, 0.16], [-0.163, 1.19, 0.205]], SIG);
+const cableIRr = cable([[-0.10, 1.36, -0.315], [0.20, 1.31, -0.05], [0.19, 1.22, 0.16], [0.163, 1.19, 0.205]], SIG);
+const cableMaterial = cable([[-0.03, 1.36, -0.315], [0.11, 1.28, -0.02], [0.10, 1.16, 0.12], [0.085, 1.11, 0.155]], SIG);
 cable([[0.20, 1.36, -0.315], [0.26, 1.20, -0.30], [0.30, 1.02, -0.30],
        [0.34, 0.90, -0.29], [0.365, 0.82, -0.283]], SIG);
 cable([[-0.24, 1.36, -0.315], [-0.16, 1.20, -0.26], [-0.05, 1.06, -0.20], [0.00, 1.00, -0.168]], SIG);
@@ -600,8 +636,30 @@ cable([[-0.24, 1.36, -0.315], [-0.16, 1.20, -0.26], [-0.05, 1.06, -0.20], [0.00,
 cable([[0.28, 1.36, -0.315], [0.24, 1.50, -0.26], [0.10, 1.55, 0.10], [0.02, 1.53, 0.305]], POT);
 cable([[-0.02, 1.51, 0.305], [-0.14, 1.48, 0.05], [-0.20, 1.40, -0.22], [SPEC.cajaX, 1.35, -0.30]], SIG);
 // 4G → antena: RUTA TENTATIVA
-cable([[SPEC.cajaX + 0.055, 1.32, -0.30], [0.02, 1.42, -0.318],
+const cable4G = cable([[SPEC.cajaX + 0.055, 1.32, -0.30], [0.02, 1.42, -0.318],
        [0.18, 1.60, -0.30], [0.30, 1.735, -0.245]], ABI, 0.0026);
+
+// antena — no existía en este modelo; el cable 4G llegaba a un punto vacío.
+// Es donde la señal deja de ser un cable y pasa a ser aire: por eso las
+// ondas de la simulación nacen aquí y no de un "paquete" viajando por cobre.
+const antenaBase = pieza(new THREE.CylinderGeometry(0.009, 0.011, 0.020, 18), M.plastNeg,
+  [0.30, 1.735, -0.245],
+  { nombre: 'Antena 4G', modulo: 'M5 · Control',
+    funcion: 'Sale por encima del cabezal (fuera de este corte). La señal celular sustituye al WiFi porque depender del WiFi de la institución falló en campo — así lo fija CONTEXTO-TACHO-ECOBOX.md §3.5.' }, m5);
+const antenaVara = pieza(new THREE.CapsuleGeometry(0.004, 0.075, 4, 12), M.plastNeg,
+  [0.30, 1.735 + 0.048, -0.245], null, m5);
+antenaVara.userData = antenaBase.userData;
+
+const grpOndas = new THREE.Group(); scene.add(grpOndas);
+const ondas = [0, 1, 2].map(i => {
+  const o = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0018, 8, 28),
+    new THREE.MeshBasicMaterial({ color: 0xA83A2C, transparent: true, opacity: 0 }));
+  o.position.set(0.30, 1.80, -0.245);
+  o.rotation.x = Math.PI / 2;
+  o.userData.fase = i / 3;
+  grpOndas.add(o);
+  return o;
+});
 
 /* ═══════════════════════════════════════════════════════════
    Tornillería
@@ -683,6 +741,170 @@ const grpRuta = new THREE.Group(); grpRuta.visible = false; raiz.add(grpRuta);
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Simulación del flujo — botella real, sin datos "viajando" por
+   el cable. Un dato eléctrico va a ~⅔c: no hay nada que animar
+   ahí sin mentir. Lo que sí es cierto y sí se puede mostrar es
+   la SECUENCIA — qué pasa, en qué orden, y qué tan rápido pasa
+   de verdad — así que cada paso resalta el tramo que llevó la
+   señal y anota su latencia real junto al ritmo lento de demo.
+   ═══════════════════════════════════════════════════════════ */
+const botellaSim = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.032, 0.19, 6, 20),
+  new THREE.MeshPhysicalMaterial({ color: 0xBFD8DA, roughness: 0.06, transmission: 0.92,
+    thickness: 0.05, ior: 1.5, transparent: true, opacity: 0.62 }));
+botellaSim.visible = false;
+raiz.add(botellaSim);
+const curvaSim = grpRuta.userData.curva;
+
+const ROT_CERRADA = -0.9, ROT_ABIERTA = -0.18;
+compuerta.rotation.x = ROT_CERRADA;
+
+function pulso(mesh, valor) {
+  if (!mesh) return;
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  mats.forEach(mt => { mt.emissive?.setHex?.(0xA83A2C); mt.emissiveIntensity = valor; });
+}
+function apagarPulsos() {
+  [cableServo, cableIRe, cableIRr, cableMaterial, cable4G, esp32Mesh, modulo4GMesh]
+    .forEach(m => pulso(m, 0));
+  [haloEmisor, haloReceptor, haloMaterial].forEach(h => h.visible = false);
+}
+
+// Cada paso: cuánto dura en la demo (lenta, a propósito) y cuánto dura de
+// verdad en el hardware — las dos cosas se muestran juntas, sin mezclarlas.
+const PASOS = {
+  abre: { label: 'Pantalla valida la sesión → servo abre la compuerta', real: '≈150 ms',
+    dwell: 1500, compuertaT: 1, next: 'entra' },
+  entra: { label: 'La botella desciende por el canal guiado', real: '≈0.5–0.8 s (gravedad)',
+    dwell: 2600, bottleT: 0.30, next: 'corte' },
+  corte: { label: 'Receptor IR corta el haz → ESP32 cuenta +1', real: '< 5 ms',
+    dwell: 900, bottleT: 0.34, cables: () => [cableIRe, cableIRr], halos: () => [haloEmisor, haloReceptor],
+    onEnter: () => { sim.contador++; },
+    next: 'material' },
+  material: { label: 'Sensor de material confirma PET — no se descarta', real: '≈10–20 ms',
+    dwell: 900, bottleT: 0.46, cables: () => [cableMaterial], halos: () => [haloMaterial], next: 'cae' },
+  cae: { label: 'La botella cae dentro de la bolsa', real: '≈0.3 s',
+    dwell: 2000, bottleT: 1.0, next: 'cierra' },
+  cierra: { label: 'Sesión terminada → ESP32 cierra la compuerta', real: '≈150 ms',
+    dwell: 1400, compuertaT: 0, cables: () => [cableServo],
+    onEnter: () => { botellaSim.visible = false; }, next: 'armar' },
+  armar: { label: 'ESP32 arma el cuerpo del POST', real: '< 5 ms',
+    dwell: 1100, cables: () => [esp32Mesh], next: 'enviar4g',
+    onEnter: () => setPayload(`{ "box_id": "ecobox-ucsp-01",\n  "n_botellas": 1,\n  "dni": null }`) },
+  enviar4g: { label: 'ESP32 → módulo 4G: POST HTTPS', real: '≈0.2–0.8 s',
+    dwell: 1300, cables: () => [cable4G, modulo4GMesh], next: 'radiar' },
+  radiar: { label: 'Módulo 4G → red celular (no WiFi — ver §3.5)', real: '≈0.5–2 s de latencia típica',
+    dwell: 1700, onda: true,
+    next: () => (sim.sinSenal && sim.reintentos === 0) ? 'timeout' : 'respuesta' },
+  timeout: { label: 'Sin señal — la solicitud expira', real: 'timeout configurado ≈5–10 s',
+    dwell: 1200, tipo: 'error', next: 'cola' },
+  cola: { label: 'Se encola en el ESP32 (memoria / SD) — el depósito no se pierde', real: '< 5 ms',
+    dwell: 1200, tipo: 'espera', next: 'reintento' },
+  reintento: { label: 'Reintentando…', real: 'backoff real: 30 s · demo acelerada ×10',
+    dwell: 3000, tipo: 'espera', cuentaAtras: 30,
+    onEnter: () => { sim.reintentos = 1; }, next: 'enviar4g' },
+  respuesta: { label: '200 OK — depósito registrado', real: '',
+    dwell: 1700, tipo: 'ok',
+    onEnter: () => setPayload(`{ "ok": true,\n  "deposito_id": ${100 + Math.floor(Math.random() * 900)},\n  "ts": "${new Date().toISOString().slice(11, 19)}" }`),
+    next: 'reposo' },
+  reposo: { label: 'Listo para el siguiente depósito', real: '',
+    dwell: 1000, tipo: 'neutral', onEnter: () => { sim.reintentos = 0; setPayload(''); }, next: 'abre' },
+};
+
+const sim = { activo: false, sinSenal: false, idx: null, t0: 0, contador: 0, reintentos: 0,
+              bFrom: 0, bTo: 0 };
+
+const elSimLabel = document.getElementById('simLabel');
+const elSimReal = document.getElementById('simReal');
+const elSimPayload = document.getElementById('simPayload');
+const elSimLed = document.getElementById('simLed');
+const elSimContador = document.getElementById('simContador');
+const elSimCuenta = document.getElementById('simCuenta');
+
+function setPayload(txt) { elSimPayload.textContent = txt; elSimPayload.hidden = !txt; }
+
+function entrarPaso(id) {
+  sim.idx = id; sim.t0 = performance.now();
+  const p = PASOS[id];
+  apagarPulsos();
+  elSimLabel.textContent = p.label;
+  elSimReal.textContent = p.real ? `tiempo real aprox.: ${p.real}` : '';
+  elSimLed.className = 'led ' + (p.tipo || 'neutral');
+  elSimCuenta.hidden = !p.cuentaAtras;
+  sim.contadorAntes = sim.contador;
+  if (p.onEnter) p.onEnter();
+  elSimContador.textContent = sim.contador;
+  if (p.bottleT != null) {
+    sim.bFrom = botellaSim.userData.t ?? 0;
+    sim.bTo = p.bottleT;
+    botellaSim.visible = true;
+  }
+  if (p.compuertaT != null) { sim.cFrom = sim.cActual ?? ROT_CERRADA; sim.cTo = p.compuertaT; }
+}
+
+function simIniciar() {
+  sim.activo = true; sim.contador = 0; sim.reintentos = 0;
+  botellaSim.userData.t = 0;
+  btnSim.textContent = '⏸ Pausar';
+  entrarPaso('abre');
+}
+function simPausar() {
+  sim.activo = false;
+  sim.pausaElapsed = performance.now() - sim.t0;
+  btnSim.textContent = '▶ Reanudar';
+}
+function simDetener() {
+  sim.activo = false; sim.idx = null;
+  botellaSim.visible = false; grpOndas.children.forEach(o => o.material.opacity = 0);
+  compuerta.rotation.x = ROT_CERRADA;
+  apagarPulsos();
+  btnSim.textContent = '▶ Reproducir';
+  elSimLabel.textContent = 'En espera — pulsa Reproducir';
+  elSimReal.textContent = ''; elSimLed.className = 'led neutral'; elSimCuenta.hidden = true;
+  setPayload('');
+}
+
+function actualizarSim(ms) {
+  if (!sim.activo || sim.idx === null) return;
+  const p = PASOS[sim.idx];
+  const t = Math.min(1, (ms - sim.t0) / p.dwell);
+
+  if (p.bottleT != null) {
+    const bt = sim.bFrom + (sim.bTo - sim.bFrom) * Math.min(1, t / 0.6);
+    botellaSim.userData.t = bt;
+    botellaSim.position.copy(curvaSim.getPointAt(bt));
+    botellaSim.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), curvaSim.getTangentAt(bt).normalize());
+  }
+  if (p.compuertaT != null) {
+    sim.cActual = sim.cFrom + (sim.cTo - sim.cFrom) * Math.min(1, t / 0.7);
+    compuerta.rotation.x = ROT_CERRADA + (ROT_ABIERTA - ROT_CERRADA) * sim.cActual;
+  }
+  if (p.cables) {
+    const activos = p.cables();
+    const pulsoVal = 0.35 + 0.55 * (0.5 + 0.5 * Math.sin(ms * 0.012));
+    activos.forEach(m => pulso(m, pulsoVal));
+  }
+  if (p.halos) {
+    const activos = p.halos();
+    activos.forEach(h => { h.visible = true; h.scale.setScalar(1 + 0.3 * (0.5 + 0.5 * Math.sin(ms * 0.012))); });
+  }
+  if (p.onda) {
+    ondas.forEach(o => {
+      const f = ((t + o.userData.fase) % 1);
+      o.material.opacity = f < 0.05 ? 0 : (1 - f) * 0.8;
+      const s = 1 + f * 9;
+      o.scale.set(s, s, 1);
+    });
+  }
+  if (p.cuentaAtras) elSimCuenta.textContent = Math.max(0, Math.ceil(p.cuentaAtras * (1 - t))) + ' s';
+
+  if (t >= 1) {
+    const siguiente = typeof p.next === 'function' ? p.next() : p.next;
+    entrarPaso(siguiente);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
    Selección
    ═══════════════════════════════════════════════════════════ */
 const rc = new THREE.Raycaster(), puntero = new THREE.Vector2();
@@ -758,6 +980,16 @@ cbZonas.onchange = () => grpZonas.visible = cbZonas.checked;
 cbRuta.onchange = () => grpRuta.visible = cbRuta.checked;
 cbGirar.onchange = () => controls.autoRotate = cbGirar.checked;
 
+const btnSim = document.getElementById('btnSim');
+const cbSinSenal = document.getElementById('cbSinSenal');
+btnSim.onclick = () => {
+  if (sim.activo) { simPausar(); }
+  else if (sim.idx === null) { simIniciar(); }
+  else { sim.activo = true; sim.t0 = performance.now() - sim.pausaElapsed; btnSim.textContent = '⏸ Pausar'; }
+};
+document.getElementById('btnSimStop').onclick = simDetener;
+cbSinSenal.onchange = () => sim.sinSenal = cbSinSenal.checked;
+
 function descargar(blob, n) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = n; a.click(); URL.revokeObjectURL(a.href);
@@ -777,7 +1009,8 @@ addEventListener('resize', () => {
 });
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let t0 = 0;
-window.__ecobox2 = { scene, raiz, camera, renderer, controls, SPEC, THREE, piezas, modulos, sensores };
+window.__ecobox2 = { scene, raiz, camera, renderer, controls, SPEC, THREE, piezas, modulos, sensores,
+  sim, PASOS, entrarPaso, simIniciar, simDetener, actualizarSim, botellaSim, compuerta, grpOndas };
 
 function animar(ms) {
   requestAnimationFrame(animar);
@@ -801,6 +1034,8 @@ function animar(ms) {
     botella.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), curva.getTangentAt(t).normalize());
   }
   grpRuta.userData.botella.visible = grpRuta.visible;
+
+  actualizarSim(ms);
 
   controls.update();
   renderer.render(scene, camera);
