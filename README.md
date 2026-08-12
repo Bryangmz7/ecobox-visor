@@ -10,7 +10,7 @@ Modelos 3D del EcoBox (EcoPoint) publicados para revisión del equipo.
 |---|---|
 | `index.html` | Índice de visores |
 | `fase1-exterior.html` | Vista exterior: estructura en chapa sin acabado, 80 × 70 × 175 cm |
-| `fase2-interior.html` | Vista interna: 21 componentes y su cableado, con despiece interactivo |
+| `fase2-interior.html` | Vista interna: 27 componentes y su cableado, con despiece y simulación del flujo de depósito |
 
 ## Qué NO hay aquí
 
@@ -33,6 +33,12 @@ Arrastra para girar, rueda para zoom, clic derecho para desplazar.
 - **Clic en una pieza** — muestra qué hace y por qué está ahí
 - **Aislar** — deja solo la pieza seleccionada
 - **Recorrido de la botella** — anima el camino completo, de la boca a la bolsa
+- **Reproducir (simulación)** — corre el flujo completo de un depósito: entra, corta
+  el haz IR, el sensor de material confirma PET, cae a la bolsa, la compuerta
+  cierra, el ESP32 arma el POST y lo envía por 4G. El panel inferior muestra el
+  JSON real de cada paso y la latencia aproximada real junto al ritmo lento de
+  la demo. **Simular sin señal** fuerza la rama de timeout → cola local →
+  reintento con backoff, para ver que el depósito no se pierde.
 
 Ambas exportan **GLB / STL** para abrir el modelo en cualquier CAD.
 
