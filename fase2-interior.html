@@ -61,7 +61,7 @@
   <p class="sub">Vista interna. Clic en cualquier pieza para saber qué hace.</p>
 
   <div class="cap">
-    Depósito útil <b>241 L</b> ≈ <b>105 botellas</b> de 1 L sin compactar.
+    Depósito útil <b>206 L</b> ≈ <b>93 botellas</b> de 1 L sin compactar.
   </div>
 
   <div class="grupo">
@@ -142,7 +142,7 @@ const SPEC = {
   // depósito dimensionado al volumen real disponible de la zona 2
   // la bolsa se corre al frente para dejar una franja trasera libre: ahí van
   // la bandeja de tapas y su ducto, que antes se solapaban con ella
-  bolsaW: 0.66, bolsaH: 0.76, bolsaD: 0.46, bolsaY: 0.57, bolsaZ: 0.06,
+  bolsaW: 0.66, bolsaH: 0.76, bolsaD: 0.41, bolsaY: 0.57, bolsaZ: 0.035,
 
   // gabinete estanco: así lo montaría un instalador, no sellando media máquina
   cajaW: 0.30, cajaH: 0.28, cajaD: 0.12, cajaX: -0.11, cajaY: 1.20,
@@ -412,10 +412,12 @@ tapaCanal.rotation.x = -RAD;
   const hueco = (cx, cy, w, h) => { const p = new THREE.Path();
     p.moveTo(cx - w/2, cy - h/2); p.lineTo(cx - w/2, cy + h/2);
     p.lineTo(cx + w/2, cy + h/2); p.lineTo(cx + w/2, cy - h/2); p.closePath(); return p; };
-  // paso de botellas (bajo la rampa)
-  s.holes.push(hueco(0, rampaZ1 + 0.075, SPEC.rampaAncho + 0.02, 0.20));
-  // paso del ducto de tapas
-  const ht = new THREE.Path(); ht.absarc(-0.31, -0.20, 0.032, 0, Math.PI * 2, true); s.holes.push(ht);
+  // paso de botellas: se extiende POR DELANTE del final de la rampa, que es
+  // hacia donde sigue la botella al salir. Antes quedaba casi todo detrás y
+  // dejaba solo 2,5 cm de paso libre.
+  s.holes.push(hueco(0, rampaZ1 - 0.105, SPEC.rampaAncho + 0.04, 0.26));
+  // paso del ducto de tapas, contra la cara frontal
+  const ht = new THREE.Path(); ht.absarc(0, 0.315, 0.032, 0, Math.PI * 2, true); s.holes.push(ht);
   // paso de la canaleta troncal
   s.holes.push(hueco(0.31, -0.30, 0.055, 0.055));
 
@@ -427,27 +429,28 @@ tapaCanal.rotation.x = -RAD;
   // collar de descarga: tubo rectangular que baja del tabique a la boca de la
   // bolsa, para que la botella no caiga al aire libre dentro del depósito
   const sc = new THREE.Shape();
-  const ow = SPEC.rampaAncho + 0.03, od = 0.21, iw = SPEC.rampaAncho + 0.02, id = 0.20;
+  const ow = SPEC.rampaAncho + 0.05, od = 0.27, iw = SPEC.rampaAncho + 0.04, id = 0.26;
   sc.moveTo(-ow/2, -od/2); sc.lineTo(ow/2, -od/2); sc.lineTo(ow/2, od/2); sc.lineTo(-ow/2, od/2); sc.closePath();
   const hc = new THREE.Path();
   hc.moveTo(-iw/2, -id/2); hc.lineTo(-iw/2, id/2); hc.lineTo(iw/2, id/2); hc.lineTo(iw/2, -id/2); hc.closePath();
   sc.holes.push(hc);
   const collar = pieza(new THREE.ExtrudeGeometry(sc, { depth: 0.075, bevelEnabled: false }), M.chapa,
-    [0, SPEC.zDeposito, rampaZ1 + 0.075],
+    [0, SPEC.zDeposito, rampaZ1 - 0.105],
     { nombre: 'Collar de descarga', funcion: 'Prolonga el paso del tabique hasta la boca de la bolsa. Sin él la botella cae al aire libre dentro del depósito y puede quedar fuera de la bolsa, o rebotar contra la pared. Cierra el último tramo del recorrido.' }, m3);
   collar.rotation.x = Math.PI / 2;
 }
 
 // trazado real: arranca pegado al buzón, pasa por debajo de la rampa, cruza
 // el tabique por su agujero y descarga dentro de la bandeja.
+// Vertical, pegado a la cara frontal. El trazado anterior salía del buzón casi
+// en horizontal (7°–18°) porque la bandeja estaba al fondo: una tapa no desliza
+// con esa pendiente. Con la bandeja al frente el ducto cae a ~89° y no se atora.
 const curvaTapas = new THREE.CatmullRomCurve3([
-  new THREE.Vector3( 0.00, SPEC.tapaY,  0.318),
-  new THREE.Vector3(-0.10, 1.140,  0.265),
-  new THREE.Vector3(-0.22, 1.095,  0.130),
-  new THREE.Vector3(-0.30, 1.045, -0.060),
-  new THREE.Vector3(-0.31, 1.000, -0.200),   // cruza el tabique por su agujero
-  new THREE.Vector3(-0.28, 0.800, -0.265),   // baja por detrás de la bolsa
-  new THREE.Vector3(-0.22, 0.480, -0.270),   // descarga dentro de la bandeja
+  new THREE.Vector3(0, SPEC.tapaY, 0.332),
+  new THREE.Vector3(0, 1.090,      0.316),
+  new THREE.Vector3(0, 1.000,      0.315),   // cruza el tabique por su agujero
+  new THREE.Vector3(0, 0.720,      0.310),
+  new THREE.Vector3(0, 0.460,      0.302),   // descarga dentro de la bandeja
 ]);
 pieza(new THREE.TubeGeometry(curvaTapas, 80, 0.026, 18, false), M.canal, [0, 0, 0],
   { nombre: 'Ducto de tapas', funcion: 'Lleva la tapa desde el buzón hasta su bandeja por un camino propio: pasa bajo la rampa, cruza el tabique por su agujero y descarga dentro de la bandeja. Nunca se cruza con la botella.' }, m3);
@@ -474,7 +477,7 @@ const m4 = modulo('M4', 'M4 · Depósito', [0, -0.01, 0.62]);
 
 pieza(new RoundedBoxGeometry(SPEC.bolsaW, SPEC.bolsaH, SPEC.bolsaD, 5, 0.06), M.bolsa,
   [0, SPEC.bolsaY, SPEC.bolsaZ],
-  { nombre: 'Bolsa removible', funcion: '241 litros útiles ≈ 105 botellas de 1 L sin compactar, unos 3 kg llena. La versión anterior de este modelo tenía 81 L y solo aguantaba 35 botellas: con eso habría que vaciar a diario y se caía la promesa de que el cliente lo haga.',
+  { nombre: 'Bolsa removible', funcion: '206 litros útiles ≈ 93 botellas de 1 L sin compactar, unos 3 kg llena. La primera versión de este modelo tenía 81 L y solo aguantaba 35 botellas: con eso habría que vaciar a diario y se caía la promesa de que el cliente lo haga.',
     abierta: 'Conflicto detectado: la bolsa mide 76 cm de alto y la puerta de depósito solo 41 cm. O la bolsa sale deformándose, o la puerta debe crecer a ~75 cm. Recomiendo agrandar la puerta.' }, m4);
 
 pieza(new RoundedBoxGeometry(0.045, 0.020, 0.015, 2, 0.002), M.pcbAzul,
@@ -491,9 +494,9 @@ pieza(new RoundedBoxGeometry(0.030, 0.010, 0.010, 2, 0.002), M.plastGris,
     funcion: 'Detecta la puerta de mantenimiento abierta y pausa el conteo. Sin él, un vaciado podría registrarse como depósitos y contaminar el dato que se vende.' }, m4);
 halo(SPEC.ladoPuertas * 0.375, 0.81, -0.28, 0.028, m4);
 
-pieza(new RoundedBoxGeometry(0.22, 0.33, 0.12, 3, 0.012), M.plastGris,
-  [-0.19, 0.355, -0.27],
-  { nombre: 'Bandeja de tapas', funcion: 'Volumen aparte para las tapas, en la franja trasera que la bolsa deja libre. Unos 8 litros: sobra para las ~105 tapas de una bolsa llena. Se vacía por la misma puerta, pero mantiene los dos plásticos sin mezclar — tienen distinto valor de reciclaje.' }, m4);
+pieza(new RoundedBoxGeometry(0.36, 0.32, 0.085, 3, 0.012), M.plastGris,
+  [0, 0.36, 0.288],
+  { nombre: 'Bandeja de tapas', funcion: 'Franja frontal que la bolsa deja libre, justo debajo del buzón. Unos 10 litros: sobra para las ~90 tapas de una bolsa llena. Estar aquí es lo que permite que el ducto caiga vertical en vez de arrastrarse en horizontal hasta el fondo.' }, m4);
 
 /* ═══════════════════════════════════════════════════════════
    M5 · CONTROL — gabinete estanco, no un compartimento sellado
