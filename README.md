@@ -10,6 +10,7 @@ Modelos 3D del EcoBox (EcoPoint) publicados para revisión del equipo.
 |---|---|
 | `index.html` | Índice de visores |
 | `fase1-exterior.html` | Vista exterior: estructura en chapa sin acabado, 80 × 70 × 175 cm |
+| `fase2-interior.html` | Vista interna: 21 componentes y su cableado, con despiece interactivo |
 
 ## Qué NO hay aquí
 
@@ -21,10 +22,19 @@ documentación viven en el repositorio privado del proyecto.
 
 Abre el enlace de arriba. No requiere instalación.
 
-- Arrastra para girar, rueda para zoom, clic derecho para desplazar
+Arrastra para girar, rueda para zoom, clic derecho para desplazar.
+
+**Vista exterior**
 - **Abrir puertas** — comprueba el despeje de las puertas de mantenimiento
 - **Marcar zonas** — superpone las cuatro franjas verticales con sus alturas
-- **Exportar GLB / STL** — descarga el modelo para abrirlo en cualquier CAD
+
+**Vista interna**
+- **Despiece** — separa los cinco módulos para ver cómo se arma
+- **Clic en una pieza** — muestra qué hace y por qué está ahí
+- **Aislar** — deja solo la pieza seleccionada
+- **Recorrido de la botella** — anima el camino completo, de la boca a la bolsa
+
+Ambas exportan **GLB / STL** para abrir el modelo en cualquier CAD.
 
 ## Estado
 
