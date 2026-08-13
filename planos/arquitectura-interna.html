@@ -1,0 +1,253 @@
+<title>EcoBox — Arquitectura interna (bosquejo referencial)</title>
+<style>
+:root{
+  --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+    --line:#3B3D3A; --rule:#55564F; --accent:#E08268;
+    --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35); }
+}
+:root[data-theme="dark"]{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+  --line:#3B3D3A; --rule:#55564F; --accent:#E08268;
+  --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35); }
+:root[data-theme="light"]{ --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05); }
+
+*{box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Roboto Mono", monospace;
+  font-size:13.5px; line-height:1.5; padding:32px 20px 64px; max-width:1140px; margin:0 auto;
+}
+h1,h2,h3{ font-family: ui-sans-serif, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-weight:700; letter-spacing:-0.01em; text-wrap:balance; margin:0; color:var(--ink); }
+.eyebrow{ text-transform:uppercase; letter-spacing:0.12em; font-size:11px; color:var(--ink-soft);
+  margin:0 0 6px; display:flex; align-items:center; gap:8px; }
+.rev-tag{ font-family: ui-monospace, monospace; font-size:10px; letter-spacing:0; color:var(--accent);
+  border:1px solid var(--accent); padding:1px 6px; text-transform:none; }
+header{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:20px;
+  border-bottom:1px solid var(--rule); padding-bottom:20px; margin-bottom:20px; }
+header h1{font-size:25px;}
+.dims{ font-size:12.5px; color:var(--ink-soft); text-align:right; max-width:280px; }
+
+.callout{
+  background:var(--panel); border:1px solid var(--rule); border-left:3px solid var(--accent);
+  padding:12px 16px; font-size:12.5px; color:var(--ink-soft); margin-bottom:24px;
+}
+.callout b{color:var(--ink);}
+
+.sheets{ display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:22px; margin-bottom:22px; }
+.sheet{ background:var(--panel); border:1px solid var(--rule); box-shadow:var(--sheet-shadow); padding:16px 16px 0; overflow-x:auto; }
+.sheet.wide{ grid-column:1 / -1; }
+.sheet svg{width:100%; height:auto; display:block;}
+.titleblock{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--rule);
+  padding:9px 0 11px; margin-top:4px; font-size:10.5px; color:var(--ink-soft); }
+.titleblock b{color:var(--ink); font-weight:600;}
+
+svg text{fill:var(--ink); font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;}
+svg line, svg rect, svg path, svg polygon, svg circle{stroke:var(--ink);}
+svg .wall{fill:none; stroke-width:2;}
+svg .dashed{stroke-dasharray:4 3; fill:none; stroke-width:1.2;}
+svg .cable{stroke-dasharray:1 3 6 3; fill:none; stroke-width:1.2; stroke:var(--ink-soft);}
+svg .dim{stroke:var(--ink-soft); stroke-width:1;}
+svg .dimtext{fill:var(--ink-soft); font-size:9px;}
+svg .zlabel{fill:var(--ink); font-size:10.5px; font-weight:600;}
+svg .zsub{fill:var(--ink-soft); font-size:8.5px;}
+svg .accent{stroke:var(--accent); fill:var(--accent);}
+svg .accenttext{fill:var(--accent);}
+svg .block{fill:var(--panel); stroke:var(--ink); stroke-width:1.4;}
+svg .blocklabel{fill:var(--ink); font-size:12px; font-weight:700; font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif;}
+svg .arrow{stroke:var(--ink-soft); stroke-width:1.2; fill:none;}
+svg .arrowtext{fill:var(--ink-soft); font-size:9.5px;}
+
+.legend{ display:flex; flex-wrap:wrap; gap:16px; font-size:11px; color:var(--ink-soft);
+  padding:12px 0 0; border-top:1px dashed var(--line); margin-top:12px; }
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.legend i{width:16px; height:0; border-top:1.5px solid var(--ink-soft); display:inline-block;}
+.legend i.dash{border-top-style:dashed;}
+.legend i.cable{background:repeating-linear-gradient(90deg,var(--ink-soft) 0 1px,transparent 1px 3px,var(--ink-soft) 3px 4px,transparent 4px 9px); height:2px; border:none;}
+.legend i.acc{border-top-color:var(--accent); border-top-width:2px;}
+
+.notes{ background:var(--panel); border:1px solid var(--rule); padding:15px 17px; margin-bottom:22px; }
+.notes h3{font-size:13.5px; margin-bottom:9px;}
+.notes ul{margin:0; padding-left:17px; font-size:12px; color:var(--ink-soft);}
+.notes li{margin-bottom:6px;}
+.notes li b{color:var(--ink); font-weight:600;}
+
+footer{ border-top:1px solid var(--rule); padding-top:16px; display:flex; justify-content:space-between;
+  align-items:center; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--ink-soft); }
+.status{display:inline-flex; align-items:center; gap:8px;}
+.status .pip{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+</style>
+
+<header>
+  <div>
+    <p class="eyebrow">EcoPoint — Diseño físico del EcoBox <span class="rev-tag">bosquejo referencial</span></p>
+    <h1>Arquitectura interna</h1>
+  </div>
+  <div class="dims">Entre el Paso 2 (esqueleto, cerrado) y el Paso 3 (render color) — no es ingeniería final</div>
+</header>
+
+<div class="callout">
+  <b>Esto es un bosquejo, no una especificación.</b> Muestra cómo se relacionan el embudo, la compuerta, el sensor, el ESP32 y el cableado — para darle a Hames un punto de partida, no una instrucción cerrada. Componentes exactos, gauge de cable, conectores y factibilidad real quedan a su criterio en el modelado 3D.
+</div>
+
+<div class="sheets">
+
+  <!-- PHYSICAL CUTAWAY -->
+  <div class="sheet">
+    <svg viewBox="0 0 430 500" role="img" aria-label="Corte lateral de las zonas 1 a 3 del EcoBox mostrando la boca de botella con su servo y sensor, el embudo hacia la bolsa, el ducto de tapas, el compartimento del ESP32, y el recorrido del cableado desde la alimentación en el zócalo.">
+      <defs>
+        <marker id="ar" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--ink-soft)"/>
+        </marker>
+      </defs>
+
+      <!-- entry stub from cabezal above -->
+      <line class="cable" x1="85" y1="8" x2="85" y2="30" marker-end="url(#ar)"/>
+      <text class="zsub" x="93" y="18">cable pantalla</text>
+      <text class="zsub" x="93" y="28">(baja del cabezal)</text>
+
+      <!-- outer wall, zonas 1-3 only -->
+      <rect class="wall" x="60" y="30" width="224" height="448"/>
+      <line class="dashed" x1="60" y1="158" x2="284" y2="158"/>
+      <line class="dashed" x1="60" y1="430" x2="284" y2="430"/>
+
+      <text class="zsub" x="172" y="20" text-anchor="middle">cabezal (140–175 cm) no se repite aquí — ver esqueleto exterior</text>
+
+      <!-- ZONA 3: interacción -->
+      <text class="zlabel" x="294" y="70">3 · Interacción</text>
+      <text class="zsub" x="294" y="83">100–140 cm</text>
+
+      <circle cx="68" cy="95" r="9" fill="none" stroke-width="1.4"/>
+      <rect x="68" y="85" width="42" height="20" fill="none" stroke-width="1.2"/>
+      <text class="zsub" x="80" y="118">boca ~11 cm Ø</text>
+
+      <circle cx="74" cy="68" r="4" fill="none" stroke-width="1.2"/>
+      <line class="dashed" x1="74" y1="72" x2="74" y2="158"/>
+      <text class="zsub" x="82" y="70">boca tapas</text>
+
+      <circle cx="90" cy="95" r="2.6" fill="var(--ink-soft)" stroke="none"/>
+      <path class="dashed" d="M90,95 L70,88"/>
+      <path class="dashed" d="M90,95 L70,103"/>
+      <text class="zsub" x="80" y="132">sensor (detecta botella)</text>
+
+      <rect x="100" y="70" width="24" height="14" fill="none" stroke-width="1.2"/>
+      <line x1="112" y1="84" x2="90" y2="90" stroke="var(--ink)" stroke-width="1"/>
+      <text class="zsub" x="128" y="80">servo — abre/cierra boca</text>
+
+      <path class="dashed accent" d="M110,88 L205,150"/>
+      <path class="dashed accent" d="M110,102 L264,150"/>
+      <text class="dimtext accenttext" x="150" y="128" text-anchor="middle">embudo 50–60°</text>
+
+      <rect x="205" y="30" width="59" height="80" fill="none" stroke-width="1.2" stroke-dasharray="1.5 2"/>
+      <text class="zsub" x="234" y="55" text-anchor="middle">ESP32</text>
+      <text class="zsub" x="234" y="66" text-anchor="middle">+ driver</text>
+      <text class="zsub" x="234" y="77" text-anchor="middle">servo</text>
+
+      <path class="cable" d="M85,30 L85,50 L234,50 L234,32" marker-end="url(#ar)"/>
+
+      <!-- ZONA 2: depósito -->
+      <text class="zlabel" x="294" y="290">2 · Depósito</text>
+      <text class="zsub" x="294" y="303">15–100 cm</text>
+
+      <rect x="70" y="168" width="204" height="40" fill="none" stroke-width="1.2" stroke-dasharray="3 2"/>
+      <text class="zsub" x="172" y="192" text-anchor="middle">tapas</text>
+
+      <rect x="70" y="216" width="204" height="182" fill="none" stroke-width="1.2" stroke-dasharray="3 2"/>
+      <text class="zlabel" x="172" y="310" text-anchor="middle" font-size="11">BOLSA DE BOTELLAS</text>
+      <text class="zsub" x="172" y="323" text-anchor="middle">removible</text>
+
+      <path class="cable" d="M200,438 L276,438 L276,110 L264,110" marker-end="url(#ar)"/>
+      <text class="zsub" x="278" y="330" transform="rotate(90 278 330)">alimentación — corre pegada a la pared trasera</text>
+
+      <!-- ZONA 1: zócalo -->
+      <text class="zlabel" x="294" y="455">1 · Zócalo</text>
+      <text class="zsub" x="294" y="468">0–15 cm</text>
+
+      <rect x="120" y="438" width="120" height="30" fill="none" stroke-width="1.2"/>
+      <text class="zsub" x="180" y="450" text-anchor="middle">alimentación /</text>
+      <text class="zsub" x="180" y="461" text-anchor="middle">batería de respaldo</text>
+    </svg>
+    <div class="titleblock">
+      <span>CORTE LATERAL — COMPONENTES</span>
+      <span>escala aprox. <b>1:32</b></span>
+    </div>
+    <div class="legend">
+      <span><i></i>pared / boca / servo</span>
+      <span><i class="dash"></i>límite de zona / compartimento</span>
+      <span><i class="acc"></i>embudo</span>
+      <span><i class="cable"></i>cableado</span>
+    </div>
+  </div>
+
+  <!-- SYSTEM / WIRING DIAGRAM -->
+  <div class="sheet">
+    <svg viewBox="0 0 600 400" role="img" aria-label="Diagrama de bloques mostrando al ESP32 como controlador central conectado a la pantalla, el sensor, el servo, la antena 4G y la alimentación.">
+      <defs>
+        <marker id="ab" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--ink-soft)"/>
+        </marker>
+      </defs>
+
+      <rect class="block" x="230" y="158" width="140" height="58" rx="2"/>
+      <text class="blocklabel" x="300" y="182" text-anchor="middle">ESP32</text>
+      <text class="zsub" x="300" y="196" text-anchor="middle">controlador</text>
+
+      <rect class="block" x="230" y="36" width="140" height="46" rx="2"/>
+      <text class="blocklabel" x="300" y="64" text-anchor="middle" font-size="11">Pantalla táctil</text>
+
+      <rect class="block" x="30" y="210" width="130" height="46" rx="2"/>
+      <text class="blocklabel" x="95" y="238" text-anchor="middle" font-size="11">Sensor</text>
+
+      <rect class="block" x="440" y="210" width="130" height="46" rx="2"/>
+      <text class="blocklabel" x="505" y="238" text-anchor="middle" font-size="11">Servo</text>
+
+      <rect class="block" x="90" y="320" width="150" height="46" rx="2"/>
+      <text class="blocklabel" x="165" y="343" text-anchor="middle" font-size="11">Alimentación</text>
+      <text class="zsub" x="165" y="355" text-anchor="middle">220V + respaldo</text>
+
+      <rect class="block" x="360" y="320" width="150" height="46" rx="2"/>
+      <text class="blocklabel" x="435" y="348" text-anchor="middle" font-size="11">Antena 4G</text>
+
+      <line class="arrow" x1="300" y1="82" x2="300" y2="156" marker-start="url(#ab)" marker-end="url(#ab)"/>
+      <text class="arrowtext" x="308" y="120">UI / validación</text>
+
+      <line class="arrow" x1="160" y1="230" x2="228" y2="205" marker-end="url(#ab)"/>
+      <text class="arrowtext" x="150" y="200">detecta botella</text>
+
+      <line class="arrow" x1="372" y1="205" x2="440" y2="230" marker-end="url(#ab)"/>
+      <text class="arrowtext" x="378" y="200">abre / cierra</text>
+
+      <line class="arrow" x1="200" y1="322" x2="258" y2="218" marker-end="url(#ab)"/>
+      <text class="arrowtext" x="185" y="280">5V / 12V</text>
+
+      <line class="arrow" x1="360" y1="335" x2="300" y2="218" marker-start="url(#ab)" marker-end="url(#ab)"/>
+      <text class="arrowtext" x="345" y="280">reporta puntos</text>
+    </svg>
+    <div class="titleblock">
+      <span>DIAGRAMA DE BLOQUES — QUIÉN HABLA CON QUIÉN</span>
+      <span>sin escala</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <h3>Supuestos abiertos para Hames</h3>
+  <ul>
+    <li><b>¿La pantalla habla directo con el ESP32, o corre con su propio mini-PC/tablet?</b> Un ESP32 solo puede ser limitado para manejar una UI táctil completa — puede necesitar un compute board aparte que solo reporte al ESP32 por serial. No lo doy por cerrado.</li>
+    <li><b>Alcance de la batería</b> — aquí la trato como respaldo (apagado seguro / continuidad breve), no como autonomía completa. Depende del presupuesto y de si hay corte eléctrico frecuente en los puntos de instalación.</li>
+    <li><b>Sensor de nivel de llenado de la bolsa</b> — no está en este bosquejo. Es una idea a evaluar (para alertar cuando la bolsa está casi llena), no un compromiso.</li>
+    <li>El cableado dibujado es solo trayecto general (de dónde a dónde) — no especifica calibre, conectores ni protección contra humedad; eso es tarea de Hames en el modelado 3D.</li>
+  </ul>
+</div>
+
+<footer>
+  <span class="status"><span class="pip"></span>Bosquejo referencial — no bloquea el Paso 3</span>
+  <span>Complementa: 03-diseno-tacho/HANDOFF-DISENO-TACHO.md · valida factibilidad: Hames en 3D</span>
+</footer>

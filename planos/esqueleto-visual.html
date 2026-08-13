@@ -1,0 +1,452 @@
+<title>EcoBox — Esqueleto visual (Paso 2/4 · rev. 2)</title>
+<style>
+:root{
+  --bg:#F6F5F1;
+  --panel:#FFFFFF;
+  --ink:#21201C;
+  --ink-soft:#5B584F;
+  --line:#C9C6BC;
+  --rule:#A9A69C;
+  --accent:#A83A2C;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#17181A;
+    --panel:#1E2023;
+    --ink:#ECEAE2;
+    --ink-soft:#A7A499;
+    --line:#3B3D3A;
+    --rule:#55564F;
+    --accent:#E08268;
+    --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+  --line:#3B3D3A; --rule:#55564F; --accent:#E08268;
+  --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+:root[data-theme="light"]{
+  --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05);
+}
+
+*{box-sizing:border-box;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Roboto Mono", monospace;
+  font-size:13.5px;
+  line-height:1.5;
+  padding:32px 20px 64px;
+  max-width:1140px;
+  margin:0 auto;
+}
+h1,h2,h3{
+  font-family: ui-sans-serif, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  text-wrap:balance;
+  margin:0;
+  color:var(--ink);
+}
+.eyebrow{
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  font-size:11px;
+  color:var(--ink-soft);
+  margin:0 0 6px;
+  display:flex; align-items:center; gap:8px;
+}
+.rev-tag{
+  font-family: ui-monospace, monospace;
+  font-size:10px;
+  letter-spacing:0;
+  color:var(--accent);
+  border:1px solid var(--accent);
+  padding:1px 6px;
+  text-transform:none;
+}
+header{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:20px;
+  border-bottom:1px solid var(--rule);
+  padding-bottom:20px;
+  margin-bottom:24px;
+}
+header h1{font-size:26px;}
+.dims{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  text-align:right;
+}
+.dims b{color:var(--ink); font-variant-numeric:tabular-nums;}
+
+.stepper{
+  display:flex;
+  align-items:center;
+  gap:0;
+  margin-bottom:24px;
+  overflow-x:auto;
+}
+.step{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 14px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.step .dot{
+  width:8px;height:8px;border-radius:50%;
+  border:1.5px solid var(--rule);
+  flex-shrink:0;
+}
+.step.done .dot{background:var(--ink-soft); border-color:var(--ink-soft);}
+.step.current .dot{background:var(--accent); border-color:var(--accent);}
+.step .label{font-size:11.5px; color:var(--ink-soft);}
+.step.current .label{color:var(--ink); font-weight:600;}
+.step.done .label{text-decoration:line-through; text-decoration-color:var(--rule);}
+.step-connector{width:24px; height:1px; background:var(--rule); flex-shrink:0;}
+
+.sheets{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  gap:22px;
+  margin-bottom:24px;
+}
+.sheet{
+  background:var(--panel);
+  border:1px solid var(--rule);
+  box-shadow:var(--sheet-shadow);
+  padding:16px 16px 0;
+  overflow-x:auto;
+}
+.sheet svg{width:100%; height:auto; display:block;}
+.titleblock{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  border-top:1px solid var(--rule);
+  padding:9px 0 11px;
+  margin-top:4px;
+  font-size:10.5px;
+  color:var(--ink-soft);
+}
+.titleblock b{color:var(--ink); font-weight:600;}
+
+svg text{fill:var(--ink); font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;}
+svg .soft{fill:var(--ink-soft);}
+svg line, svg rect, svg path, svg polygon, svg circle{stroke:var(--ink);}
+svg .wall{fill:none; stroke-width:2;}
+svg .dashed{stroke-dasharray:4 3; fill:none; stroke-width:1.2;}
+svg .dim{stroke:var(--ink-soft); stroke-width:1;}
+svg .dimtext{fill:var(--ink-soft); font-size:9px;}
+svg .zlabel{fill:var(--ink); font-size:10.5px; font-weight:600;}
+svg .zsub{fill:var(--ink-soft); font-size:8.5px;}
+svg .wordmark{fill:var(--ink); font-weight:700; font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif;}
+svg .accent{stroke:var(--accent); fill:var(--accent);}
+svg .accenttext{fill:var(--accent);}
+
+.legend{
+  display:flex; flex-wrap:wrap; gap:16px;
+  font-size:11px; color:var(--ink-soft);
+  padding:12px 0 0;
+  border-top:1px dashed var(--line);
+  margin-top:12px;
+}
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.legend i{width:16px; height:0; border-top:1.5px solid var(--ink-soft); display:inline-block;}
+.legend i.dash{border-top-style:dashed;}
+.legend i.acc{border-top-color:var(--accent); border-top-width:2px;}
+.legend i.ring{width:10px;height:10px;border:1.5px solid var(--ink-soft);border-radius:50%;}
+
+table.zones{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--panel);
+  border:1px solid var(--rule);
+  margin-bottom:22px;
+  font-size:12px;
+}
+table.zones th, table.zones td{
+  text-align:left;
+  padding:9px 11px;
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+table.zones th{
+  font-family: ui-sans-serif, "Segoe UI", Arial, sans-serif;
+  text-transform:uppercase;
+  font-size:10px;
+  letter-spacing:0.06em;
+  color:var(--ink-soft);
+  font-weight:600;
+  border-bottom:1px solid var(--rule);
+}
+table.zones tr:last-child td{border-bottom:none;}
+table.zones td.num{font-variant-numeric:tabular-nums; color:var(--ink-soft); white-space:nowrap;}
+
+.notes{
+  background:var(--panel);
+  border:1px solid var(--rule);
+  padding:15px 17px;
+  margin-bottom:22px;
+}
+.notes h3{font-size:13.5px; margin-bottom:9px;}
+.notes ul{margin:0; padding-left:17px; font-size:12px; color:var(--ink-soft);}
+.notes li{margin-bottom:6px;}
+.notes li b{color:var(--ink); font-weight:600;}
+.notes .flag{color:var(--accent); font-weight:600;}
+
+footer{
+  border-top:1px solid var(--rule);
+  padding-top:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  font-size:11.5px;
+  color:var(--ink-soft);
+}
+.status{display:inline-flex; align-items:center; gap:8px;}
+.status .pip{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+</style>
+
+<header>
+  <div>
+    <p class="eyebrow">EcoPoint — Diseño físico del EcoBox <span class="rev-tag">rev. 2</span></p>
+    <h1>Esqueleto visual</h1>
+  </div>
+  <div class="dims">Paso 2 de 4 — bloques y proporciones, sin color<br>
+    <b>80</b> × <b>70</b> × <b>175</b> cm</div>
+</header>
+
+<div class="stepper">
+  <div class="step done"><span class="dot"></span><span class="label">1 · Especificación en texto</span></div>
+  <div class="step-connector"></div>
+  <div class="step current"><span class="dot"></span><span class="label">2 · Esqueleto visual (rev. 2)</span></div>
+  <div class="step-connector"></div>
+  <div class="step"><span class="dot"></span><span class="label">3 · Render final en color</span></div>
+  <div class="step-connector"></div>
+  <div class="step"><span class="dot"></span><span class="label">4 · Entrega a Hames (3D)</span></div>
+</div>
+
+<div class="sheets">
+
+  <!-- FRONT VIEW -->
+  <div class="sheet">
+    <svg viewBox="0 0 460 660" role="img" aria-label="Vista frontal del EcoBox: wordmark Ecopoint, pantalla vertical, boca circular de botella con buzón de tapas independiente, y depósito dividido en bolsa de botellas y compartimento de tapas.">
+      <defs>
+        <marker id="af" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="var(--ink-soft)"/>
+        </marker>
+      </defs>
+
+      <line class="dim" x1="35" y1="30" x2="35" y2="590" marker-start="url(#af)" marker-end="url(#af)"/>
+      <text class="dimtext" x="24" y="314" text-anchor="middle" transform="rotate(-90 24 314)">175 cm total</text>
+      <text class="dimtext" x="52" y="33" text-anchor="end">175</text>
+      <text class="dimtext" x="52" y="145" text-anchor="end">140</text>
+      <text class="dimtext" x="52" y="273" text-anchor="end">100</text>
+      <text class="dimtext" x="52" y="545" text-anchor="end">15</text>
+      <text class="dimtext" x="52" y="593" text-anchor="end">0</text>
+
+      <!-- outer wall -->
+      <rect class="wall" x="60" y="30" width="256" height="560"/>
+
+      <!-- zone divider lines -->
+      <line class="dashed" x1="60" y1="142" x2="316" y2="142"/>
+      <line class="dashed" x1="60" y1="270" x2="316" y2="270"/>
+      <line class="dashed" x1="60" y1="542" x2="316" y2="542"/>
+
+      <!-- Zone 4: Cabezal -->
+      <line x1="188" y1="30" x2="188" y2="18" stroke="var(--ink)" stroke-width="1.2"/>
+      <circle cx="188" cy="15" r="2.6" fill="none" stroke="var(--ink)"/>
+      <text class="zsub" x="195" y="18">antena 4G</text>
+      <text class="wordmark" x="188" y="54" text-anchor="middle" font-size="21">Ecopoint</text>
+      <rect x="160" y="68" width="56" height="70" fill="none" stroke="var(--ink)" stroke-width="1.4"/>
+
+      <!-- Zone 3: Interacción -->
+      <circle cx="188" cy="188" r="18" fill="none" stroke="var(--ink)" stroke-width="1.4"/>
+      <circle cx="188" cy="188" r="13" fill="none" stroke="var(--ink)" stroke-width="1"/>
+      <circle cx="188" cy="220" r="6" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+      <text class="zsub" x="200" y="223">tapas</text>
+      <text class="zsub" x="188" y="244" text-anchor="middle">boca ~11 cm Ø · abre automático</text>
+
+      <!-- Zone 2: Depósito -->
+      <rect class="dashed" x="76" y="284" width="224" height="50"/>
+      <text class="zlabel" x="188" y="304" text-anchor="middle" font-size="10">TAPAS</text>
+      <text class="zsub" x="188" y="317" text-anchor="middle">compartimento aparte</text>
+
+      <rect class="dashed" x="76" y="342" width="224" height="186"/>
+      <text class="zlabel" x="188" y="428" text-anchor="middle">BOLSA DE BOTELLAS</text>
+      <text class="zsub" x="188" y="442" text-anchor="middle">removible — el cliente la retira</text>
+
+      <text class="zsub" x="188" y="536" text-anchor="middle">puertas de mantenimiento → ver vista lateral</text>
+
+      <!-- Zone 1: Zócalo -->
+      <polygon points="70,590 78,590 74,600" fill="var(--ink-soft)" stroke="none"/>
+      <polygon points="298,590 306,590 302,600" fill="var(--ink-soft)" stroke="none"/>
+      <text class="zsub" x="188" y="570" text-anchor="middle">zócalo</text>
+
+      <!-- width dimension -->
+      <line class="dim" x1="60" y1="612" x2="316" y2="612" marker-start="url(#af)" marker-end="url(#af)"/>
+      <text class="dimtext" x="188" y="630" text-anchor="middle">80 cm</text>
+
+      <!-- right-side zone index -->
+      <text class="zlabel" x="326" y="82">4 · Cabezal</text>
+      <text class="zsub" x="326" y="96">140–175 cm</text>
+      <text class="zsub" x="326" y="110">Ecopoint + pantalla</text>
+
+      <text class="zlabel" x="326" y="200">3 · Interacción</text>
+      <text class="zsub" x="326" y="214">100–140 cm</text>
+      <text class="zsub" x="326" y="228">boca + tapas</text>
+
+      <text class="zlabel" x="326" y="400">2 · Depósito</text>
+      <text class="zsub" x="326" y="414">15–100 cm</text>
+      <text class="zsub" x="326" y="428">bolsa + tapas aparte</text>
+
+      <text class="zlabel" x="326" y="560">1 · Zócalo</text>
+      <text class="zsub" x="326" y="574">0–15 cm</text>
+    </svg>
+    <div class="titleblock">
+      <span>VISTA FRONTAL</span>
+      <span>escala aprox. <b>1:32</b></span>
+    </div>
+  </div>
+
+  <!-- SIDE VIEW -->
+  <div class="sheet">
+    <svg viewBox="0 0 430 660" role="img" aria-label="Vista lateral en corte del EcoBox: ambas puertas de mantenimiento en el mismo costado, ducto de tapas separado del embudo de botellas a 50 a 60 grados, y compartimento sellado de electrónica.">
+      <defs>
+        <marker id="as" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="var(--ink-soft)"/>
+        </marker>
+      </defs>
+
+      <text class="dimtext" x="24" y="314" text-anchor="middle" transform="rotate(-90 24 314)">175 cm total</text>
+      <line class="dim" x1="35" y1="30" x2="35" y2="590" marker-start="url(#as)" marker-end="url(#as)"/>
+
+      <rect class="wall" x="60" y="30" width="224" height="560"/>
+
+      <line class="dashed" x1="60" y1="142" x2="284" y2="142"/>
+      <line class="dashed" x1="60" y1="270" x2="284" y2="270"/>
+      <line class="dashed" x1="60" y1="542" x2="284" y2="542"/>
+
+      <text class="zsub" x="172" y="90" text-anchor="middle">(sin puertas — cabezal)</text>
+
+      <!-- sealed electronics compartment -->
+      <rect x="205" y="142" width="59" height="80" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="1.5 2"/>
+      <text class="zsub" x="234" y="185" text-anchor="middle" transform="rotate(90 234 185)">electrónica — sellado</text>
+
+      <!-- cap chute -->
+      <line class="dashed" x1="118" y1="150" x2="118" y2="284"/>
+      <text class="zsub" x="126" y="220">ducto tapas</text>
+
+      <!-- funnel to bag -->
+      <path class="dashed accent" d="M100,152 L205,224"/>
+      <path class="dashed accent" d="M150,152 L264,224"/>
+      <path d="M172,140 A18,18 0 0 1 172,160" fill="none" class="accent" stroke-width="1.2"/>
+      <text class="dimtext accenttext" x="182" y="132" text-anchor="middle">50–60°</text>
+
+      <!-- door 1: electrónica -->
+      <rect x="94" y="164" width="96" height="70" fill="none" stroke="var(--ink)" stroke-width="1.4"/>
+      <circle cx="94" cy="176" r="2.2" fill="var(--ink)"/>
+      <circle cx="94" cy="222" r="2.2" fill="var(--ink)"/>
+      <path d="M182,190 a6,6 0 1 1 0,12" fill="none" stroke="var(--ink)" stroke-width="1.1"/>
+      <rect x="178" y="198" width="8" height="6" fill="none" stroke="var(--ink)" stroke-width="1"/>
+      <text class="zsub" x="142" y="250" text-anchor="middle">puerta electrónica — cerradura</text>
+      <text class="zsub" x="142" y="261" text-anchor="middle">(servo, sensor, cableado)</text>
+
+      <!-- tapas compartment -->
+      <rect x="70" y="284" width="204" height="40" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="3 2"/>
+      <text class="zsub" x="172" y="308" text-anchor="middle">tapas</text>
+
+      <!-- door 2: depósito (bolsa) — ancha, casi todo el costado, para sacar la bolsa llena -->
+      <rect x="70" y="332" width="204" height="132" fill="none" stroke="var(--ink)" stroke-width="1.4"/>
+      <circle cx="70" cy="342" r="2.2" fill="var(--ink)"/>
+      <circle cx="70" cy="454" r="2.2" fill="var(--ink)"/>
+      <rect x="252" y="392" width="12" height="6" fill="none" stroke="var(--ink)" stroke-width="1"/>
+      <text class="zsub" x="172" y="484" text-anchor="middle">puerta depósito — ancha, para sacar la bolsa llena</text>
+      <text class="zsub" x="172" y="495" text-anchor="middle">(pestillo simple — vaciado por el cliente)</text>
+
+      <text class="zsub" x="172" y="570" text-anchor="middle">mismo costado — una sola zona de acceso</text>
+
+      <line class="dim" x1="60" y1="612" x2="284" y2="612" marker-start="url(#as)" marker-end="url(#as)"/>
+      <text class="dimtext" x="172" y="630" text-anchor="middle">70 cm</text>
+
+      <text class="zlabel" x="294" y="82">4 · Cabezal</text>
+      <text class="zlabel" x="294" y="200">3 · Interacción</text>
+      <text class="zsub" x="294" y="214">puerta electrónica</text>
+      <text class="zlabel" x="294" y="400">2 · Depósito</text>
+      <text class="zsub" x="294" y="414">puerta + bolsa + tapas</text>
+      <text class="zlabel" x="294" y="560">1 · Zócalo</text>
+    </svg>
+    <div class="titleblock">
+      <span>VISTA LATERAL — CORTE</span>
+      <span>escala aprox. <b>1:32</b></span>
+    </div>
+    <div class="legend">
+      <span><i></i>pared / puerta</span>
+      <span><i class="dash"></i>límite de zona / compartimento</span>
+      <span><i class="ring"></i>boca circular</span>
+      <span><i class="acc"></i>embudo / cota crítica</span>
+    </div>
+  </div>
+
+</div>
+
+<table class="zones">
+  <thead>
+    <tr><th>Zona</th><th>Altura</th><th>Contenido (fachada)</th><th>Nota</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>1 · Zócalo</b></td>
+      <td class="num">0–15 cm</td>
+      <td>Anclaje al piso, patas niveladoras</td>
+      <td>No decorativo — evita que el tacho se tambalee</td>
+    </tr>
+    <tr>
+      <td><b>2 · Depósito</b></td>
+      <td class="num">15–100 cm</td>
+      <td>Bolsa de botellas (removible) + compartimento de tapas separado</td>
+      <td>Las tapas no se cuentan como botella — se separan al caer</td>
+    </tr>
+    <tr>
+      <td><b>3 · Interacción</b></td>
+      <td class="num">100–140 cm</td>
+      <td>Boca circular de botella (~11 cm Ø) + buzón de tapas</td>
+      <td>Dimensionada para uso personal: 1 L holgado, 1.5 L justo (poco frecuente)</td>
+    </tr>
+    <tr>
+      <td><b>4 · Cabezal</b></td>
+      <td class="num">140–175 cm</td>
+      <td>Pantalla táctil vertical + wordmark "Ecopoint"</td>
+      <td>Antena 4G arriba, sin obstrucciones</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="notes">
+  <h3>Decisiones de esta revisión</h3>
+  <ul>
+    <li><b>Solo "Ecopoint"</b> en el cabezal — wordmark único, grande y en negrita. Sin logo secundario en esta etapa; el grafismo completo se define en el render color.</li>
+    <li><b>Pantalla vertical, centrada</b> — estándar de kiosco de autoservicio; centrada porque las puertas de mantenimiento ya viven en la cara lateral, no compiten con la fachada.</li>
+    <li><b>Boca circular horizontal, ~11 cm Ø</b> — la botella entra recostada, no parada. Dimensionada para el uso real: 1 L con holgura, 1.5 L justo (el tamaño frecuente en consumo personal).</li>
+    <li><b>Tapas separadas de botellas</b> — buzón propio junto a la boca principal, ducto independiente, compartimento aparte en el depósito. No se cuentan como botella y tienen otro valor de reciclaje.</li>
+    <li><b>Bolsa removible</b> — el cliente la retira por la puerta de depósito, sin tocar botellas sueltas.</li>
+    <li><span class="flag">Referencial:</span> el trazado del embudo, el ducto de tapas y el compartimento de electrónica en la vista lateral son un bosquejo de la estructura — el mecanismo real (servo, sensor, cableado, ESP32) se define en la siguiente fase con Hames.</li>
+  </ul>
+</div>
+
+<footer>
+  <span class="status"><span class="pip"></span>Revisión 2 — boca redimensionada, tapas separadas, solo wordmark Ecopoint</span>
+  <span>Fuente: 03-diseno-tacho/HANDOFF-DISENO-TACHO.md · próximo: tu revisión final antes del Paso 3</span>
+</footer>

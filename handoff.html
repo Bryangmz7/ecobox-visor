@@ -1,0 +1,203 @@
+<title>EcoBox — Handoff de sesión (11 ago 2026)</title>
+<style>
+:root{
+  --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C; --ok:#3E7D4A;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+    --line:#3B3D3A; --rule:#55564F; --accent:#E08268; --ok:#5FA86C;
+    --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35); }
+}
+:root[data-theme="dark"]{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+  --line:#3B3D3A; --rule:#55564F; --accent:#E08268; --ok:#5FA86C;
+  --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35); }
+:root[data-theme="light"]{ --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C; --ok:#3E7D4A;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05); }
+
+*{box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Roboto Mono", monospace;
+  font-size:13.5px; line-height:1.6; padding:36px 20px 72px; max-width:900px; margin:0 auto;
+}
+h1,h2,h3{ font-family: ui-sans-serif, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-weight:700; letter-spacing:-0.01em; text-wrap:balance; margin:0; color:var(--ink); }
+.eyebrow{ text-transform:uppercase; letter-spacing:0.12em; font-size:11px; color:var(--ink-soft); margin:0 0 6px; }
+header{ border-bottom:1px solid var(--rule); padding-bottom:20px; margin-bottom:8px; }
+header h1{font-size:27px;}
+header .sub{font-size:12.5px; color:var(--ink-soft); margin-top:6px;}
+
+.status{
+  display:flex; gap:10px; align-items:flex-start; background:var(--panel); border:1px solid var(--rule);
+  border-left:3px solid var(--accent); padding:14px 17px; margin:22px 0 30px; font-size:12.5px; color:var(--ink-soft);
+}
+.status b{color:var(--ink);}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px;}
+
+h2.sec{
+  font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft);
+  margin:34px 0 14px; padding-bottom:8px; border-bottom:1px dashed var(--line);
+}
+
+.cards{display:flex; flex-direction:column; gap:10px;}
+a.card{
+  display:flex; justify-content:space-between; align-items:center; gap:14px; text-decoration:none; color:inherit;
+  background:var(--panel); border:1px solid var(--rule); padding:13px 16px;
+  transition:border-color .12s ease, transform .12s ease;
+}
+a.card:hover{border-color:var(--accent); transform:translateX(2px);}
+a.card:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+a.card .txt{display:flex; flex-direction:column; gap:3px; min-width:0;}
+a.card .nom{font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif; font-weight:600; font-size:13px; color:var(--ink);}
+a.card .desc{font-size:11.5px; color:var(--ink-soft);}
+a.card .url{font-size:10.5px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:180px;}
+a.card .arrow{flex-shrink:0; color:var(--accent); font-size:15px;}
+.tag{display:inline-block; font-size:9.5px; padding:1px 6px; border:1px solid var(--rule); color:var(--ink-soft); margin-right:6px;}
+.tag.pub{border-color:var(--ok); color:var(--ok);}
+.tag.priv{border-color:var(--accent); color:var(--accent);}
+
+table.pend{ width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--rule); font-size:12px; }
+table.pend th, table.pend td{ text-align:left; padding:9px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.pend th{ font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif; text-transform:uppercase; font-size:10px;
+  letter-spacing:.06em; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--rule); }
+table.pend tr:last-child td{border-bottom:none;}
+table.pend td.who{color:var(--accent); font-weight:600; white-space:nowrap; font-size:11px;}
+table.pend td.num{color:var(--ink-soft); font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+ul.dec{margin:0; padding-left:18px; font-size:12.5px; color:var(--ink-soft);}
+ul.dec li{margin-bottom:9px;}
+ul.dec li b{color:var(--ink); font-weight:600;}
+
+.notas{background:var(--panel); border:1px solid var(--rule); padding:15px 17px; font-size:12px; color:var(--ink-soft);}
+.notas b{color:var(--ink);}
+.notas code{font-size:11px; background:var(--bg); padding:1px 4px; border:1px solid var(--line);}
+
+footer{ margin-top:40px; padding-top:18px; border-top:1px solid var(--rule); font-size:11px; color:var(--ink-soft); }
+</style>
+
+<header>
+  <p class="eyebrow">EcoPoint — Diseño físico del EcoBox</p>
+  <h1>Handoff de sesión</h1>
+  <p class="sub">11 de agosto de 2026 — esqueleto visual, arquitectura interna y modelado 3D interactivo</p>
+</header>
+
+<div class="status">
+  <span class="dot"></span>
+  <div>
+    <b>Exterior: cerrado y aprobado</b> (con una excepción pendiente, ver tabla) · <b>Interior: bosquejado en 2D y modelado en 3D</b>, referencial — lo valida Hames · <b>Render final en color: sin iniciar</b>, espera el vinilo de fachada.
+  </div>
+</div>
+
+<h2 class="sec">Visores 3D — públicos, para todo el equipo</h2>
+<div class="cards">
+  <a class="card" href="https://bryangmz7.github.io/ecobox-visor/" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Índice de visores</span>
+      <span class="desc">Se actualiza solo con cada push — no hay que reenviar nada</span>
+    </div>
+    <span class="url">ecobox-visor.github.io</span><span class="arrow">↗</span>
+  </a>
+  <a class="card" href="https://bryangmz7.github.io/ecobox-visor/fase1-exterior.html" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Fase 1 · Vista exterior</span>
+      <span class="desc">Estructura sin acabado, puertas de mantenimiento, exporta GLB/STL</span>
+    </div>
+    <span class="url">.../fase1-exterior.html</span><span class="arrow">↗</span>
+  </a>
+  <a class="card" href="https://bryangmz7.github.io/ecobox-visor/fase2-interior.html" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Fase 2 · Vista interna + simulación</span>
+      <span class="desc">27 componentes, despiece, cableado, y "▶ Reproducir" el flujo completo de un depósito</span>
+    </div>
+    <span class="url">.../fase2-interior.html</span><span class="arrow">↗</span>
+  </a>
+  <a class="card" href="https://github.com/Bryangmz7/ecobox-visor" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Repositorio del visor</span>
+      <span class="desc">Código fuente de ambos visores</span>
+    </div>
+    <span class="url">github.com/.../ecobox-visor</span><span class="arrow">↗</span>
+  </a>
+</div>
+
+<h2 class="sec">Planos 2D — públicos, mismo repo que el 3D</h2>
+<div class="cards">
+  <a class="card" href="planos/esqueleto-visual.html" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Esqueleto visual (exterior)</span>
+      <span class="desc">Wireframe a escala — vistas frontal y lateral, sin color</span>
+    </div>
+    <span class="arrow">↗</span>
+  </a>
+  <a class="card" href="planos/arquitectura-interna.html" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Arquitectura interna — primer bosquejo</span>
+      <span class="desc">Corte lateral + diagrama de bloques, previo al 3D</span>
+    </div>
+    <span class="arrow">↗</span>
+  </a>
+  <a class="card" href="planos/componentes.html" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag pub">público</span>Recorrido de la botella + despiece</span>
+      <span class="desc">6 estaciones, 5 módulos, tabla de 14 componentes</span>
+    </div>
+    <span class="arrow">↗</span>
+  </a>
+</div>
+
+<h2 class="sec">Repo privado — pendiente de mezclar</h2>
+<div class="cards">
+  <a class="card" href="https://github.com/Bryangmz7/ecopoint/pull/new/diseno/visor-3d-fase1" target="_blank" rel="noopener">
+    <div class="txt">
+      <span class="nom"><span class="tag priv">privado</span>Rama diseno/visor-3d-fase1</span>
+      <span class="desc">Visor de Fase 1 + fix de docs/HARDWARE.md — esperando revisión de Bryan</span>
+    </div>
+    <span class="arrow">↗</span>
+  </a>
+</div>
+
+<h2 class="sec">Pendientes</h2>
+<table class="pend">
+  <thead><tr><th>#</th><th>Qué falta</th><th>Quién decide</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td><b>Puerta de depósito muy angosta</b> — la bolsa mide 76cm de alto, la puerta 41cm. No sale sin deformarse. No se tocó porque modifica la Fase 1 ya aprobada.</td><td class="who">Bryan</td></tr>
+    <tr><td class="num">2</td><td><b>Ubicación del módulo 4G</b> — ¿en el ESP32 o en el kiosko? El fix del POST inclina hacia el ESP32, no está cerrado.</td><td class="who">Hames + Nikolas</td></tr>
+    <tr><td class="num">3</td><td><b>Riesgo de sensado con PET transparente</b> — a probar en banco. Plan B: paleta mecánica con microswitch.</td><td class="who">Hames</td></tr>
+    <tr><td class="num">4</td><td><b>Antecámara con esclusa vs. desviador a bin</b> — dos alternativas evaluadas con costo, no implementadas.</td><td class="who">Hames</td></tr>
+    <tr><td class="num">5</td><td><b>Sensor de nivel de llenado</b> — idea evaluada, no comprometida como requisito.</td><td class="who">Bryan / Hames</td></tr>
+    <tr><td class="num">6</td><td><b>Cierre de sesión: ¿por compuerta o por timeout?</b> — define cuándo dispara el POST.</td><td class="who">Nikolas</td></tr>
+    <tr><td class="num">7</td><td><b>RTC y memoria de cola offline</b> — sin responder desde el documento original.</td><td class="who">Nikolas</td></tr>
+    <tr><td class="num">8</td><td><b>PR sin mezclar</b> — rama con el visor de Fase 1 y el fix de HARDWARE.md.</td><td class="who">Bryan</td></tr>
+    <tr><td class="num">9</td><td><b>Paso 3 — render final en color</b> — sin iniciar, necesita el diseño del vinilo de fachada.</td><td class="who">Bryan</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec">Decisiones cerradas esta sesión</h2>
+<ul class="dec">
+  <li><b>Boca circular ~11cm Ø</b> en vez de compuerta rectangular — la geometría obliga a la orientación correcta sin mecanismo.</li>
+  <li><b>Rampa continua 50–60°</b> reemplaza al embudo con codo de 90°, que habría atorado toda botella de tamaño real.</li>
+  <li><b>Rampa cerrada con tapa</b> — sin ella, una mano entra por la boca y alcanza los sensores; el conteo es el producto que se vende.</li>
+  <li><b>Barrera infrarroja</b> reemplaza al HC-SR04 para contar; el HC-SR04 se reubicó a medir nivel de llenado.</li>
+  <li><b>Sensor de material</b> y <b>sensor de puerta abierta</b> — nuevos, no existían en la lista original.</li>
+  <li><b>Tapas separadas</b> con buzón, ducto vertical y bandeja propios.</li>
+  <li><b>Bolsa removible 206L ≈ 93 botellas</b>, dimensionada al volumen real (antes: 81L / 35 botellas).</li>
+  <li><b>Gabinete estanco IP65</b> en vez de "compartimento sellado" genérico.</li>
+  <li><b>Canaleta ranurada</b> para todo el cableado — nada cruza el aire.</li>
+  <li><b>El ESP32 dispara el POST</b>, no el kiosko — corregido en los dos documentos de contrato de hardware.</li>
+  <li><b>Antena 4G física</b> agregada al modelo.</li>
+  <li><b>Cabezal: solo "Ecopoint"</b> en el wordmark, sin "El Nodo" en esta etapa.</li>
+</ul>
+
+<h2 class="sec">Documentos del repo corregidos</h2>
+<div class="notas">
+  Los dos se contradecían sobre quién dispara el POST de depósito. Se resolvió a favor del <b>ESP32</b>, porque la regla de oro del proyecto — "el conteo nace en el sensor y muere en el reporte, ninguna interfaz web lo genera" — lo exige.
+  <br><br>
+  <code>01-estrategia/CONTEXTO-TACHO-ECOBOX.md</code> · <code>ecopoint/docs/HARDWARE.md</code>
+</div>
+
+<footer>
+  Handoff completo y con el mismo contenido en <code>03-diseno-tacho/HANDOFF-DISENO-TACHO.md</code> del repo privado, para quien retome el trabajo desde ahí.
+</footer>

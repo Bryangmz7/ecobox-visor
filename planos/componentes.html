@@ -1,0 +1,476 @@
+<title>EcoBox — Recorrido de la botella y módulos de componentes</title>
+<style>
+:root{
+  --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+    --line:#3B3D3A; --rule:#55564F; --accent:#E08268;
+    --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35); }
+}
+:root[data-theme="dark"]{ --bg:#17181A; --panel:#1E2023; --ink:#ECEAE2; --ink-soft:#A7A499;
+  --line:#3B3D3A; --rule:#55564F; --accent:#E08268;
+  --sheet-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35); }
+:root[data-theme="light"]{ --bg:#F6F5F1; --panel:#FFFFFF; --ink:#21201C; --ink-soft:#5B584F;
+  --line:#C9C6BC; --rule:#A9A69C; --accent:#A83A2C;
+  --sheet-shadow: 0 1px 2px rgba(33,32,28,0.06), 0 8px 24px rgba(33,32,28,0.05); }
+
+*{box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Roboto Mono", monospace;
+  font-size:13.5px; line-height:1.5; padding:32px 20px 64px; max-width:1140px; margin:0 auto;
+}
+h1,h2,h3{ font-family: ui-sans-serif, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-weight:700; letter-spacing:-0.01em; text-wrap:balance; margin:0; color:var(--ink); }
+.eyebrow{ text-transform:uppercase; letter-spacing:0.12em; font-size:11px; color:var(--ink-soft);
+  margin:0 0 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rev-tag{ font-family: ui-monospace, monospace; font-size:10px; letter-spacing:0; color:var(--accent);
+  border:1px solid var(--accent); padding:1px 6px; text-transform:none; }
+header{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:20px;
+  border-bottom:1px solid var(--rule); padding-bottom:20px; margin-bottom:20px; }
+header h1{font-size:25px;}
+.dims{ font-size:12.5px; color:var(--ink-soft); text-align:right; max-width:300px; }
+
+.callout{
+  background:var(--panel); border:1px solid var(--rule); border-left:3px solid var(--accent);
+  padding:12px 16px; font-size:12.5px; color:var(--ink-soft); margin-bottom:24px;
+}
+.callout b{color:var(--ink);}
+
+.sheet{ background:var(--panel); border:1px solid var(--rule); box-shadow:var(--sheet-shadow);
+  padding:16px 16px 0; overflow-x:auto; margin-bottom:22px; }
+.sheet svg{width:100%; height:auto; display:block;}
+.titleblock{ display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  border-top:1px solid var(--rule); padding:9px 0 11px; margin-top:6px; font-size:10.5px; color:var(--ink-soft); }
+.titleblock b{color:var(--ink); font-weight:600;}
+
+svg text{fill:var(--ink); font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;}
+svg line, svg rect, svg path, svg polygon, svg circle{stroke:var(--ink);}
+svg .wall{fill:none; stroke-width:1.8;}
+svg .part{fill:none; stroke-width:1.4;}
+svg .dashed{stroke-dasharray:4 3; fill:none; stroke-width:1.2;}
+svg .fine{stroke-dasharray:2 2.5; fill:none; stroke-width:1;}
+svg .lead{stroke:var(--ink-soft); stroke-width:0.9; stroke-dasharray:2 2;}
+svg .band{fill:none; stroke:var(--rule); stroke-width:1; stroke-dasharray:5 4;}
+svg .sub{fill:var(--ink-soft); font-size:9px;}
+svg .cap{fill:var(--ink); font-size:10px; font-weight:600;}
+svg .mod{fill:var(--ink-soft); font-size:10px; font-weight:600; letter-spacing:0.08em;}
+svg .railtitle{fill:var(--ink); font-size:12px; font-weight:700; font-family:ui-sans-serif,"Segoe UI",Arial,sans-serif;}
+svg .railsub{fill:var(--ink-soft); font-size:9.5px;}
+svg .badge{fill:none; stroke:var(--ink); stroke-width:1.2;}
+svg .badgenum{fill:var(--ink); font-size:10px; font-weight:700; font-family:ui-sans-serif,Arial,sans-serif;}
+svg .accent{stroke:var(--accent); fill:none;}
+svg .accenttext{fill:var(--accent); font-size:9px;}
+svg .accentbold{fill:var(--accent); font-size:11px; font-weight:700; font-family:ui-sans-serif,Arial,sans-serif;}
+svg .openbox{stroke:var(--accent); stroke-dasharray:4 3; fill:none; stroke-width:1.3;}
+svg .bottle{fill:none; stroke:var(--ink-soft); stroke-width:1.3;}
+svg .optbox{fill:none; stroke:var(--line); stroke-width:1;}
+
+.legend{ display:flex; flex-wrap:wrap; gap:16px; font-size:11px; color:var(--ink-soft);
+  padding:11px 0 0; border-top:1px dashed var(--line); margin-top:0; }
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.legend i{width:16px; height:0; border-top:1.5px solid var(--ink-soft); display:inline-block;}
+.legend i.dash{border-top-style:dashed;}
+.legend i.acc{border-top-color:var(--accent); border-top-width:2px; border-top-style:dashed;}
+
+table.comp{ width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--rule);
+  margin-bottom:22px; font-size:12px; }
+table.comp th, table.comp td{ text-align:left; padding:9px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.comp th{ font-family: ui-sans-serif, "Segoe UI", Arial, sans-serif; text-transform:uppercase;
+  font-size:10px; letter-spacing:0.06em; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--rule); }
+table.comp tr:last-child td{border-bottom:none;}
+table.comp td.mod{color:var(--ink-soft); white-space:nowrap; font-size:11px;}
+.tag{ display:inline-block; font-size:10px; padding:1px 6px; border:1px solid var(--rule);
+  color:var(--ink-soft); white-space:nowrap; }
+.tag.nuevo{ border-color:var(--ink); color:var(--ink); font-weight:600; }
+.tag.abierto{ border-color:var(--accent); color:var(--accent); font-weight:600; }
+
+.notes{ background:var(--panel); border:1px solid var(--rule); padding:15px 17px; margin-bottom:22px; }
+.notes h3{font-size:13.5px; margin-bottom:9px;}
+.notes ol, .notes ul{margin:0; padding-left:18px; font-size:12px; color:var(--ink-soft);}
+.notes li{margin-bottom:8px;}
+.notes li b{color:var(--ink); font-weight:600;}
+.notes .who{color:var(--accent); font-weight:600;}
+.notes code{font-size:11px; background:var(--bg); padding:1px 4px; border:1px solid var(--line);}
+
+.fixed{ border-left:3px solid var(--ink); }
+
+footer{ border-top:1px solid var(--rule); padding-top:16px; display:flex; justify-content:space-between;
+  align-items:center; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--ink-soft); }
+.status{display:inline-flex; align-items:center; gap:8px;}
+.status .pip{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+</style>
+
+<header>
+  <div>
+    <p class="eyebrow">EcoPoint — EcoBox <span class="rev-tag">bosquejo referencial · 2D · rev. 2</span></p>
+    <h1>Recorrido de la botella y módulos de componentes</h1>
+  </div>
+  <div class="dims">Solo el módulo de componentes — no el tacho completo. Sin cableado ni alturas de montaje.</div>
+</header>
+
+<div class="callout">
+  <b>Qué cambió en esta revisión.</b> El plano anterior tenía un codo de 90° entre la boca y la caída: una botella de 30 cm no puede girar dentro de un ducto de 11 cm, se atora siempre. Lo reemplacé por una <b>rampa continua</b> sin esquinas, y con eso también se reubica el sensor de conteo. Abajo está la comparación de las tres salidas posibles.
+</div>
+
+<!-- ============ PLANO 0 — ALTERNATIVAS ============ -->
+<div class="sheet">
+  <svg viewBox="0 0 660 300" role="img" aria-label="Comparación de tres formas de llevar la botella desde la boca hasta el depósito: codo de noventa grados que se atora, rampa continua sin esquinas, y tambor rotatorio.">
+    <defs>
+      <marker id="rot" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+        <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--ink-soft)" stroke="none"/>
+      </marker>
+    </defs>
+
+    <!-- ===== OPCIÓN A — codo 90° (descartada) ===== -->
+    <text class="railtitle" x="30" y="28">A · Codo de 90°</text>
+    <text class="accenttext" x="30" y="42">descartada — se atora</text>
+
+    <line class="wall" x1="42" y1="60" x2="42" y2="230"/>
+    <path class="wall" d="M42,72 H150 V230"/>
+    <path class="wall" d="M42,102 H112 V230"/>
+
+    <!-- bottle jammed: longer than the duct is wide -->
+    <rect class="bottle" x="50" y="76" width="86" height="22" rx="4" stroke="var(--accent)"/>
+    <rect class="bottle" x="136" y="82" width="10" height="10" stroke="var(--accent)"/>
+
+    <path class="accent" d="M104,112 L124,132 M124,112 L104,132" stroke-width="1.6"/>
+    <text class="accenttext" x="114" y="150" text-anchor="middle">no puede girar</text>
+    <text class="sub" x="96" y="200" text-anchor="middle">el ducto (30 px) es más</text>
+    <text class="sub" x="96" y="212" text-anchor="middle">angosto que la botella (86 px)</text>
+
+    <!-- ===== OPCIÓN B — rampa continua (recomendada) ===== -->
+    <text class="railtitle" x="250" y="28">B · Rampa continua</text>
+    <text class="accenttext" x="250" y="42">recomendada</text>
+
+    <line class="wall" x1="256" y1="60" x2="256" y2="230"/>
+    <path class="wall" d="M256,72 L366,214"/>
+    <path class="wall" d="M256,102 L340,210"/>
+
+    <!-- bottle sliding nose-first -->
+    <rect class="bottle" x="272" y="112" width="72" height="22" rx="4"
+          transform="rotate(52 308 123)" stroke="var(--accent)"/>
+
+    <!-- sensor across the ramp -->
+    <rect class="part" x="292" y="96" width="13" height="11"/>
+    <rect class="part" x="310" y="150" width="13" height="11"/>
+    <line class="accent" x1="299" y1="107" x2="316" y2="150" stroke-dasharray="3 2.5"/>
+    <text class="sub" x="336" y="128">sensor</text>
+
+    <text class="sub" x="300" y="248" text-anchor="middle">sin esquinas: la botella nunca</text>
+    <text class="sub" x="300" y="260" text-anchor="middle">tiene que girar, solo desliza</text>
+
+    <!-- ===== OPCIÓN C — tambor rotatorio ===== -->
+    <text class="railtitle" x="464" y="28">C · Tambor rotatorio</text>
+    <text class="sub" x="464" y="42">lo decide Hames</text>
+
+    <line class="wall" x1="470" y1="60" x2="470" y2="230"/>
+    <path class="wall" d="M470,72 H500"/>
+    <path class="wall" d="M470,102 H500"/>
+
+    <circle class="part" cx="546" cy="112" r="46"/>
+    <rect class="bottle" x="508" y="80" width="72" height="22" rx="4"
+          transform="rotate(20 544 91)" stroke="var(--accent)"/>
+    <path class="accent" d="M546,60 A52,52 0 0 1 598,112" marker-end="url(#rot)" stroke-width="1.2"/>
+
+    <path class="wall" d="M522,168 V230"/>
+    <path class="wall" d="M572,168 V230"/>
+
+    <text class="sub" x="546" y="248" text-anchor="middle">la cuna gira y la baja: control</text>
+    <text class="sub" x="546" y="260" text-anchor="middle">total, pero es un motor más</text>
+  </svg>
+  <div class="titleblock">
+    <span>PLANO 0 — TRES SALIDAS PARA EL MISMO PROBLEMA</span>
+    <span>esquemático, <b>sin escala</b></span>
+  </div>
+</div>
+
+<!-- ============ PLANO A — RECORRIDO ============ -->
+<div class="sheet">
+  <svg viewBox="0 0 660 590" role="img" aria-label="Corte esquemático del recorrido de la botella en seis estaciones sobre una rampa continua: destapado, entrada, conteo, validación, caída guiada y acumulación en la bolsa removible.">
+
+    <text class="sub" x="70" y="300" text-anchor="middle" transform="rotate(-90 70 300)">cara frontal (usuario)</text>
+
+    <rect class="wall" x="80" y="50" width="220" height="500"/>
+
+    <!-- ① buzón de tapas -->
+    <rect class="part" x="74" y="68" width="12" height="14"/>
+    <path class="fine" d="M86,75 H112"/>
+    <line class="lead" x1="114" y1="75" x2="302" y2="75"/>
+
+    <!-- servo (encima de la boca) -->
+    <rect class="part" x="94" y="82" width="36" height="18"/>
+    <text class="sub" x="112" y="95" text-anchor="middle" font-size="8">servo</text>
+
+    <!-- ② boca + compuerta -->
+    <rect class="part" x="74" y="105" width="12" height="42"/>
+    <path class="part" d="M86,105 L110,96"/>
+    <circle cx="86" cy="105" r="2.4" fill="var(--ink)" stroke="none"/>
+    <line class="lead" x1="112" y1="126" x2="302" y2="126"/>
+
+    <!-- rampa continua, sin codos -->
+    <path class="wall" d="M86,105 L200,258"/>
+    <path class="wall" d="M86,147 L200,300"/>
+
+    <!-- referencia de ángulo -->
+    <path class="fine" d="M86,147 H140"/>
+    <path class="accent" d="M124,147 A38,38 0 0 1 112,175" stroke-width="1"/>
+    <path class="fine" d="M104,186 L100,236"/>
+    <text class="accenttext" x="88" y="250">50–60°</text>
+
+    <!-- ③ barrera IR sobre la rampa -->
+    <rect class="part" x="120" y="140" width="12" height="12"/>
+    <rect class="part" x="120" y="206" width="12" height="12"/>
+    <line class="accent" x1="126" y1="152" x2="126" y2="206" stroke-dasharray="3 2.5"/>
+    <line class="lead" x1="152" y1="170" x2="302" y2="170"/>
+
+    <!-- ④ chequeo de material -->
+    <rect class="part" x="156" y="178" width="20" height="22"/>
+    <path class="fine" d="M162,200 Q168,212 158,214"/>
+    <line class="lead" x1="182" y1="216" x2="302" y2="216"/>
+
+    <!-- ⑤ tramo guiado -->
+    <line class="lead" x1="206" y1="280" x2="302" y2="280"/>
+
+    <!-- ⑥ bolsa + sensor de nivel -->
+    <rect class="part" x="170" y="310" width="26" height="13"/>
+    <path class="fine" d="M174,323 L162,352"/>
+    <path class="fine" d="M192,323 L204,352"/>
+    <text class="sub" x="183" y="305" text-anchor="middle">nivel</text>
+    <rect class="dashed" x="126" y="330" width="140" height="200" rx="6"/>
+    <text class="cap" x="196" y="440" text-anchor="middle">BOLSA</text>
+    <line class="lead" x1="270" y1="420" x2="302" y2="420"/>
+
+    <!-- compartimento de tapas -->
+    <rect class="dashed" x="86" y="440" width="34" height="90"/>
+    <text class="sub" x="103" y="485" text-anchor="middle" transform="rotate(-90 103 485)">tapas</text>
+
+    <!-- badges -->
+    <circle class="badge" cx="314" cy="75" r="10"/><text class="badgenum" x="314" y="79" text-anchor="middle">1</text>
+    <circle class="badge" cx="314" cy="126" r="10"/><text class="badgenum" x="314" y="130" text-anchor="middle">2</text>
+    <circle class="badge" cx="314" cy="170" r="10"/><text class="badgenum" x="314" y="174" text-anchor="middle">3</text>
+    <circle class="badge" cx="314" cy="216" r="10"/><text class="badgenum" x="314" y="220" text-anchor="middle">4</text>
+    <circle class="badge" cx="314" cy="280" r="10"/><text class="badgenum" x="314" y="284" text-anchor="middle">5</text>
+    <circle class="badge" cx="314" cy="420" r="10"/><text class="badgenum" x="314" y="424" text-anchor="middle">6</text>
+
+    <!-- rail -->
+    <text class="railtitle" x="336" y="75">Destapado</text>
+    <text class="railsub" x="336" y="89">La tapa entra por su propio buzón y baja por un ducto</text>
+    <text class="railsub" x="336" y="101">aparte. No se cuenta — es otro plástico.</text>
+
+    <text class="railtitle" x="336" y="126">Entrada</text>
+    <text class="railsub" x="336" y="140">La boca redonda obliga a meterla acostada y de punta:</text>
+    <text class="railsub" x="336" y="152">no cabe de otra forma. La orientación queda resuelta.</text>
+
+    <text class="railtitle" x="336" y="170">Conteo</text>
+    <text class="railsub" x="336" y="184">Barrera IR arriba de la rampa, donde la botella todavía</text>
+    <text class="railsub" x="336" y="196">va guiada y lenta. +1. Aquí nace el dato que se vende.</text>
+
+    <text class="railtitle" x="336" y="216">Validación</text>
+    <text class="railsub" x="336" y="230">Chequeo de metal o peso. Si es lata o vidrio, no suma</text>
+    <text class="railsub" x="336" y="242">al conteo. El objeto igual cae.</text>
+
+    <text class="railtitle" x="336" y="280">Caída guiada</text>
+    <text class="railsub" x="336" y="294">Rampa continua a 50–60°, sin codos. La botella se</text>
+    <text class="railsub" x="336" y="306">desliza de punta y nunca tiene que girar.</text>
+
+    <text class="railtitle" x="336" y="420">Acumulación</text>
+    <text class="railsub" x="336" y="434">Cae a la bolsa removible. Recién aquí puede voltearse,</text>
+    <text class="railsub" x="336" y="446">y ya no importa: el conteo ocurrió arriba.</text>
+  </svg>
+  <div class="titleblock">
+    <span>PLANO A — RECORRIDO DE LA BOTELLA</span>
+    <span>esquemático, <b>sin escala</b></span>
+  </div>
+  <div class="legend">
+    <span><i></i>pared / pieza</span>
+    <span><i class="dash"></i>bolsa / compartimento</span>
+    <span><i class="acc"></i>rampa · haz del sensor</span>
+  </div>
+</div>
+
+<!-- ============ PLANO B — DESPIECE ============ -->
+<div class="sheet">
+  <svg viewBox="0 0 680 760" role="img" aria-label="Despiece en cinco módulos: entrada, validación, guiado, depósito y control, con los componentes de cada uno separados para que se distingan.">
+
+    <line class="fine" x1="200" y1="30" x2="200" y2="496"/>
+    <text class="sub" x="206" y="26">eje del recorrido</text>
+
+    <!-- ===== M1 ENTRADA ===== -->
+    <rect class="band" x="90" y="40" width="340" height="112"/>
+    <text class="mod" x="96" y="34">M1</text>
+
+    <circle class="part" cx="150" cy="90" r="25"/>
+    <circle class="part" cx="150" cy="90" r="18"/>
+    <text class="sub" x="150" y="136" text-anchor="middle">boca ~11 cm Ø</text>
+
+    <rect class="part" x="228" y="74" width="56" height="30"/>
+    <path class="part" d="M228,74 L206,58"/>
+    <circle cx="228" cy="74" r="2.4" fill="var(--ink)" stroke="none"/>
+    <text class="sub" x="256" y="136" text-anchor="middle">compuerta + servo</text>
+
+    <circle class="part" cx="366" cy="90" r="11"/>
+    <text class="sub" x="366" y="136" text-anchor="middle">buzón de tapas</text>
+
+    <text class="railtitle" x="452" y="82">Entrada</text>
+    <text class="railsub" x="452" y="98">Lo único que el usuario</text>
+    <text class="railsub" x="452" y="110">toca. Dos aberturas:</text>
+    <text class="railsub" x="452" y="122">botella y tapa.</text>
+
+    <!-- ===== M2 VALIDACIÓN ===== -->
+    <rect class="band" x="90" y="192" width="340" height="104"/>
+    <text class="mod" x="96" y="186">M2</text>
+
+    <rect class="part" x="148" y="222" width="16" height="22"/>
+    <rect class="part" x="252" y="222" width="16" height="22"/>
+    <line class="accent" x1="164" y1="233" x2="252" y2="233" stroke-dasharray="3 2.5"/>
+    <text class="sub" x="208" y="272" text-anchor="middle">barrera IR — cuenta +1</text>
+
+    <rect class="part" x="336" y="219" width="34" height="28"/>
+    <path class="fine" d="M336,226 Q320,233 336,240"/>
+    <text class="sub" x="353" y="272" text-anchor="middle">chequeo de material</text>
+
+    <text class="railtitle" x="452" y="228">Validación</text>
+    <text class="railsub" x="452" y="244">El corazón del negocio:</text>
+    <text class="railsub" x="452" y="256">cuenta y descarta lo que</text>
+    <text class="railsub" x="452" y="268">no es PET.</text>
+
+    <!-- ===== M3 GUIADO ===== -->
+    <rect class="band" x="90" y="336" width="340" height="98"/>
+    <text class="mod" x="96" y="330">M3</text>
+
+    <path class="accent" d="M136,352 L232,414" stroke-width="1.6"/>
+    <path class="accent" d="M160,346 L256,408" stroke-width="1.6"/>
+    <text class="sub" x="196" y="428" text-anchor="middle">rampa 50–60°</text>
+
+    <path class="fine" d="M370,352 V414"/>
+    <text class="sub" x="370" y="428" text-anchor="middle">ducto de tapas</text>
+
+    <text class="railtitle" x="452" y="372">Guiado</text>
+    <text class="railsub" x="452" y="388">Piezas pasivas, sin</text>
+    <text class="railsub" x="452" y="400">electrónica. Separan los</text>
+    <text class="railsub" x="452" y="412">dos materiales.</text>
+
+    <!-- ===== M4 DEPÓSITO ===== -->
+    <rect class="band" x="90" y="474" width="340" height="132"/>
+    <text class="mod" x="96" y="468">M4</text>
+
+    <rect class="part" x="186" y="492" width="28" height="13"/>
+    <path class="fine" d="M190,505 L176,530"/>
+    <path class="fine" d="M210,505 L224,530"/>
+    <text class="sub" x="248" y="502">sensor de nivel</text>
+
+    <rect class="dashed" x="130" y="522" width="170" height="62" rx="5"/>
+    <text class="cap" x="215" y="558" text-anchor="middle">BOLSA</text>
+    <text class="sub" x="215" y="596" text-anchor="middle">removible</text>
+
+    <rect class="dashed" x="330" y="522" width="66" height="62"/>
+    <text class="sub" x="363" y="557" text-anchor="middle">tapas</text>
+    <text class="sub" x="363" y="596" text-anchor="middle">compartimento</text>
+
+    <text class="railtitle" x="452" y="512">Depósito</text>
+    <text class="railsub" x="452" y="528">Dos volúmenes separados.</text>
+    <text class="railsub" x="452" y="540">El sensor de nivel evita</text>
+    <text class="railsub" x="452" y="552">visitas de mantenimiento</text>
+    <text class="railsub" x="452" y="564">innecesarias.</text>
+
+    <!-- ===== M5 CONTROL ===== -->
+    <rect class="band" x="90" y="646" width="340" height="94"/>
+    <text class="mod" x="96" y="640">M5</text>
+
+    <rect class="part" x="108" y="668" width="66" height="34"/>
+    <text class="sub" x="141" y="689" text-anchor="middle">ESP32</text>
+
+    <rect class="part" x="186" y="668" width="72" height="34"/>
+    <text class="sub" x="222" y="685" text-anchor="middle">kiosko</text>
+    <text class="sub" x="222" y="696" text-anchor="middle">pant.+compute</text>
+
+    <rect class="openbox" x="270" y="668" width="58" height="34"/>
+    <text class="accenttext" x="299" y="689" text-anchor="middle">4G ?</text>
+
+    <rect class="part" x="340" y="668" width="66" height="34"/>
+    <text class="sub" x="373" y="689" text-anchor="middle">220V</text>
+
+    <text class="sub" x="260" y="722" text-anchor="middle">fuera del recorrido de la botella — compartimento sellado</text>
+
+    <text class="railtitle" x="452" y="684">Control</text>
+    <text class="railsub" x="452" y="700">El ESP32 postea a Supabase.</text>
+    <text class="railsub" x="452" y="712">Dónde va el 4G sigue</text>
+    <text class="railsub" x="452" y="724">abierto.</text>
+  </svg>
+  <div class="titleblock">
+    <span>PLANO B — DESPIECE POR MÓDULOS</span>
+    <span>esquemático, <b>sin escala</b></span>
+  </div>
+  <div class="legend">
+    <span><i></i>componente</span>
+    <span><i class="dash"></i>volumen / módulo</span>
+    <span><i class="acc"></i>rampa · decisión abierta</span>
+  </div>
+</div>
+
+<!-- ============ RIESGO DE SENSADO ============ -->
+<div class="notes">
+  <h3>¿El sensor va a poder identificarla en la caída?</h3>
+  <ul>
+    <li><b>Tiempo: no es problema.</b> Una botella de 1 L mide ~30 cm. Deslizando por la rampa corta el haz durante 150–300 ms — una eternidad para un microcontrolador, que muestrea en milisegundos.</li>
+    <li><b>Transparencia: ahí sí hay un riesgo real.</b> El PET transparente deja pasar buena parte del infrarrojo. En la práctica la curvatura de la botella desvía el haz lo suficiente como para que el receptor lo pierda y cuente — pero eso <b>hay que probarlo en banco, no darlo por hecho</b>. Es el único punto de todo el diseño donde no me la juego sin evidencia.</li>
+    <li><b>Por eso el sensor va arriba, no abajo.</b> En la rampa la botella pasa guiada, lenta y en una sola orientación. En caída libre gira, acelera y puede pasar de canto — mucho menos predecible. Contar donde el movimiento está controlado es lo que hace confiable el número.</li>
+    <li><b>Plan B si el IR falla en banco:</b> una paleta mecánica con microswitch que toda botella tiene que empujar. Es inmune a transparencia, polvo y luz ambiental, cuesta casi nada, y se puede ver funcionar a simple vista — argumento nada menor cuando le vendes "dato verificable" a una institución. Contra: es una pieza que se desgasta.</li>
+  </ul>
+</div>
+
+<!-- ============ TABLA ============ -->
+<table class="comp">
+  <thead>
+    <tr><th>Componente</th><th>Módulo</th><th>Función</th><th>Estado</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Boca circular ~11 cm Ø</td><td class="mod">M1</td><td>Entrada de botella acostada; su geometría fuerza la orientación y filtra lo que no cabe</td><td><span class="tag nuevo">Nuevo</span></td></tr>
+    <tr><td>Compuerta + servo</td><td class="mod">M1</td><td>Abre y cierra el paso; cierra la sesión de depósito</td><td><span class="tag">v1 — se mantiene</span></td></tr>
+    <tr><td>Buzón de tapas</td><td class="mod">M1</td><td>Entrada separada para la tapa (otro plástico, no se cuenta)</td><td><span class="tag nuevo">Nuevo</span></td></tr>
+    <tr><td>Barrera IR (emisor + receptor)</td><td class="mod">M2</td><td>Cuenta cada botella sobre la rampa — la fuente de verdad del negocio</td><td><span class="tag nuevo">Nuevo — reemplaza al HC-SR04 en el conteo</span></td></tr>
+    <tr><td>Sensor de material (inductivo o celda de carga)</td><td class="mod">M2</td><td>Detecta lata/vidrio y evita que sumen al conteo</td><td><span class="tag nuevo">Nuevo — cumple "solo PET"</span></td></tr>
+    <tr><td>Rampa continua 50–60°</td><td class="mod">M3</td><td>Lleva la botella de la boca al depósito sin esquinas; aleja la caída de la electrónica</td><td><span class="tag nuevo">Reemplaza al embudo con codo</span></td></tr>
+    <tr><td>Ducto de tapas</td><td class="mod">M3</td><td>Lleva la tapa a su compartimento, sin cruzarse con la botella</td><td><span class="tag nuevo">Nuevo</span></td></tr>
+    <tr><td>Bolsa removible</td><td class="mod">M4</td><td>Acumula las botellas; el cliente la retira entera</td><td><span class="tag nuevo">Nuevo</span></td></tr>
+    <tr><td>HC-SR04 (ultrasónico)</td><td class="mod">M4</td><td>Mide el nivel de llenado de la bolsa</td><td><span class="tag nuevo">Reubicado — ya no cuenta botellas</span></td></tr>
+    <tr><td>Sensor de puerta abierta</td><td class="mod">M4</td><td>Pausa el conteo durante el vaciado, para que un mantenimiento no se registre como depósitos</td><td><span class="tag nuevo">Nuevo — integridad del dato</span></td></tr>
+    <tr><td>ESP32</td><td class="mod">M5</td><td>Control del servo, lectura de sensores, cola offline y envío del POST</td><td><span class="tag">v1 — se mantiene</span></td></tr>
+    <tr><td>Kiosko (pantalla + compute)</td><td class="mod">M5</td><td>UI, DNI opcional, muestra el conteo; entrega el DNI al ESP32 por serial</td><td><span class="tag">v1 — tablet Android o RPi</span></td></tr>
+    <tr><td>Módulo 4G</td><td class="mod">M5</td><td>Envía cada depósito y el latido a Supabase</td><td><span class="tag abierto">Abierto — ESP32 o kiosko</span></td></tr>
+    <tr><td>Alimentación + respaldo</td><td class="mod">M5</td><td>220V; respaldo breve para apagado seguro</td><td><span class="tag">v1 — alcance a revisar</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ============ DOCUMENTOS CORREGIDOS ============ -->
+<div class="notes fixed">
+  <h3>Documentos corregidos hoy</h3>
+  <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">Los dos documentos se contradecían sobre quién dispara el POST. Resolví a favor del <b>ESP32</b> y alineé ambos.</p>
+  <ul>
+    <li><b>Por qué el ESP32 y no el kiosko.</b> Tu propia regla de oro dice que ninguna interfaz web genera, edita ni corrige el conteo. El kiosko corre una web app: si él postea, el número pasa por sus manos antes de llegar a la nube — que es exactamente el defecto del piloto 2025. Con el ESP32 posteando, el camino es sensor → firmware → Supabase, sin escalas.</li>
+    <li><b>El DNI sí puede venir del kiosko.</b> No es el dato que vendes; es una etiqueta opcional de atribución. El kiosko se lo pasa al ESP32 por serial y el ESP32 arma el cuerpo completo.</li>
+    <li><code>CONTEXTO-TACHO-ECOBOX.md</code> — §4 corregido, §5 ahora incluye <code>dni</code> opcional en el body.</li>
+    <li><code>ecopoint/docs/HARDWARE.md</code> — nueva sección "Quién dispara el POST", body con <code>dni</code>, y el ejemplo en C++ actualizado para manejar el caso <code>NULL</code>.</li>
+    <li><span class="who">Ojo:</span> esto inclina la balanza hacia poner el 4G en el ESP32, pero la decisión sigue siendo de Hames — no la cierro yo.</li>
+  </ul>
+</div>
+
+<!-- ============ NOTAS ============ -->
+<div class="notes">
+  <h3>Decisiones diferidas — las decide Hames</h3>
+  <ol>
+    <li><b>Antecámara con esclusa</b> (opción C del Plano 0). El usuario deja la botella en una cuna, la máquina valida y recién ahí la gira hacia adentro; si no pasa, la devuelve. Cumple "impedir físicamente" de forma literal y resuelve el problema de "una botella a la vez". <span class="who">Costo:</span> motor adicional, más mantenimiento.</li>
+    <li><b>Desviador a bin de rechazo.</b> Acepta todo, valida al caer y desvía lo no-PET a un compartimento aparte. Mantiene la bolsa limpia — mejor material para reciclar. <span class="who">Costo:</span> segundo servo, bin extra y menos volumen de depósito.</li>
+    <li><b>Dónde va el 4G.</b> En el ESP32 (SIM7600) o en el kiosko (tablet con SIM). <span class="who">Consultar:</span> Hames y Nikolas.</li>
+    <li><b>Cierre de sesión.</b> Sigue abierta en <code>HARDWARE.md</code>: ¿el conteo se cierra por compuerta o por timeout del sensor? Define cuándo se dispara el POST.</li>
+  </ol>
+</div>
+
+<footer>
+  <span class="status"><span class="pip"></span>Paso 1 de 2 — planos 2D. El 3D del módulo sale cuando apruebes esto.</span>
+  <span>Fuentes: HANDOFF-DISENO-TACHO.md · CONTEXTO-TACHO-ECOBOX.md · docs/HARDWARE.md</span>
+</footer>
