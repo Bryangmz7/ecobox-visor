@@ -110,15 +110,15 @@ Repo aparte y público (el repo principal es privado; ver por qué en la memoria
 | **Fase 2 — Vista interna** (27 componentes, despiece, cableado, **simulación del flujo de depósito**) | https://bryangmz7.github.io/ecobox-visor/fase2-interior.html |
 | Repositorio del visor | https://github.com/Bryangmz7/ecobox-visor |
 
-### Planos 2D — artifacts privados de Claude
+### Planos 2D — públicos, mismo repo que el 3D
 
-Privados por defecto. Para que el equipo los vea, compártelos desde el menú del propio artifact (no basta con pasar el link).
+Originalmente publicados como artifacts de Claude; se movieron aquí el 12-ago-2026 porque los artifacts son privados por defecto y romper el acceso del equipo (404 al abrir el link) no vale la comodidad de publicarlos ahí.
 
 | Qué es | Link |
 |---|---|
-| Esqueleto visual (exterior, wireframe a escala) | https://claude.ai/code/artifact/24d382e2-7707-4b00-b025-bca20030d7c5 |
-| Arquitectura interna (primer bosquejo referencial, previo al 3D) | https://claude.ai/code/artifact/90f8f299-54e7-41ba-a6d6-a6e6240ad309 |
-| Recorrido de la botella + despiece de componentes (con tabla de 14 componentes) | https://claude.ai/code/artifact/4f93f788-e0ad-4a90-a8a9-6040daebd646 |
+| Esqueleto visual (exterior, wireframe a escala) | https://bryangmz7.github.io/ecobox-visor/planos/esqueleto-visual.html |
+| Arquitectura interna (primer bosquejo referencial, previo al 3D) | https://bryangmz7.github.io/ecobox-visor/planos/arquitectura-interna.html |
+| Recorrido de la botella + despiece de componentes (con tabla de 14 componentes) | https://bryangmz7.github.io/ecobox-visor/planos/componentes.html |
 
 ### Repo privado — pendiente de mezclar
 
@@ -128,7 +128,7 @@ Privados por defecto. Para que el equipo los vea, compártelos desde el menú de
 
 ### Este documento
 
-Este handoff también existe como artifact, para verlo en el navegador sin abrir el repo (privado — compártelo desde su propio menú): https://claude.ai/code/artifact/91539f3b-9a07-4154-8863-012a90ddd2b7
+Este handoff también existe como página pública, con tarjetas clicables: https://bryangmz7.github.io/ecobox-visor/handoff.html
 
 ---
 
